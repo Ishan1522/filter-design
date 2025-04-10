@@ -1,14 +1,8 @@
-cmake_minimum_required(VERSION 3.16)
+# Specify the minimum version for CMake
+cmake_minimum_required(VERSION 3.10)
 
-# Set the project name
-project(MyProject VERSION 1.0)
+# Define your project name and the programming language(s) you will use.
+project(HelloWorld CXX)
 
-# Specify the C++ standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-# Add the executable
-add_executable(MyProject src/main.cpp)
-
-# Include directories
-target_include_directories(MyProject PUBLIC "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/include")
+# Add an executable target named "hello" with the source file main.cpp
+add_executable(hello main.cpp)

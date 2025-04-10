@@ -1,8 +1,12 @@
-# Specify the minimum version for CMake
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.0)
 
-# Define your project name and the programming language(s) you will use.
-project(HelloWorld CXX)
+project (filter-design CXX)
 
-# Add an executable target named "hello" with the source file main.cpp
-add_executable(hello main.cpp)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/source SOURCE_LIB)
+
+add_library(${PROJECT_NAME} STATIC ${SOURCE_LIB})
+
+target_include_directories(${PROJECT_NAME} 
+PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)

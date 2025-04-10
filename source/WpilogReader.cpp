@@ -1,4 +1,4 @@
-#include "WPILOGDecoder.h"
+#include "../include/WPILOGDecoder.h" 
 
 void processRecord(const WPILOGDecoderRecord& record, size_t position) {
     std::cout << "Entry: " << record.getEntry() << ", Timestamp: " << record.getTimestamp() << std::endl;

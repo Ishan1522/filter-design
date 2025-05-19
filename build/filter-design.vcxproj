@@ -276,9 +276,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\ishan\filter-design\source\OnePole.cpp" />
-    <ClCompile Include="C:\Users\ishan\filter-design\source\ReadData.cpp" />
+    <ClCompile Include="C:\Users\ishan\filter-design\source\Butterworth.cpp" />
     <ClCompile Include="C:\Users\ishan\filter-design\source\WpilogReader.cpp" />
+    <ClCompile Include="C:\Users\ishan\filter-design\source\main.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

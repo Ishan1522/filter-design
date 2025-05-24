@@ -1,13 +1,11 @@
-#include <glass/Context.h>
-#include <glass/View.h>
-#include <glass/Window.h>
-#include <glass/WindowManager.h>
-#include <glass/other/Plot.h>
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>   // Needs linking with glfw
 #include <stdio.h>
+
+using namespace std;
 
 // GLFW error callback
 static void glfw_error_callback(int error, const char* description) {

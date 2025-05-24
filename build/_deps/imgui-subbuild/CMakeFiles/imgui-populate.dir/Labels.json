@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/imgui-populate"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/84fcfa784ed4cc054f067ca883fdebcc/imgui-populate.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/9672539389437e0fa539026bf9f4872f/imgui-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/4de0948cf8ad9b27a100ddfafe7ce817/imgui-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/4de0948cf8ad9b27a100ddfafe7ce817/imgui-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/4de0948cf8ad9b27a100ddfafe7ce817/imgui-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/4de0948cf8ad9b27a100ddfafe7ce817/imgui-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/4de0948cf8ad9b27a100ddfafe7ce817/imgui-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/4de0948cf8ad9b27a100ddfafe7ce817/imgui-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/4de0948cf8ad9b27a100ddfafe7ce817/imgui-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/ishan/filter-design-1/build/_deps/imgui-subbuild/CMakeFiles/4de0948cf8ad9b27a100ddfafe7ce817/imgui-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"imgui-populate"
+		],
+		"name" : "imgui-populate"
+	}
+}

@@ -1,0 +1,10 @@
+^C:\USERS\ISHAN\FILTER-DESIGN-1\BUILD\_DEPS\GLFW-SUBBUILD\CMAKEFILES\CD79CD51D9DAF741A05CC41A08F8DF7F\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/ishan/filter-design-1/build/_deps/glfw-subbuild -BC:/Users/ishan/filter-design-1/build/_deps/glfw-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/ishan/filter-design-1/build/_deps/glfw-subbuild/glfw-populate.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

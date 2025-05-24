@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\b8c540944745a4dc3e93748695bc8078\wpilib-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\b8c540944745a4dc3e93748695bc8078\wpilib-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\b8c540944745a4dc3e93748695bc8078\wpilib-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\b8c540944745a4dc3e93748695bc8078\wpilib-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\b8c540944745a4dc3e93748695bc8078\wpilib-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\b8c540944745a4dc3e93748695bc8078\wpilib-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\b8c540944745a4dc3e93748695bc8078\wpilib-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\b8c540944745a4dc3e93748695bc8078\wpilib-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\924963c6acf76bb20bb7deaab4c60cfe\wpilib-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\1265bcade5742dddbdfeb44ab25badd7\wpilib-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\ishan\filter-design-1\build\_deps\wpilib-subbuild\CMakeFiles\wpilib-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{7DA10C67-6FB8-3353-9CC3-4D0FF16994E4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

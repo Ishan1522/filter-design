@@ -1,0 +1,6 @@
+CompileFlags:
+  Add: 
+    - "-Ibuild/_deps/imgui-src"
+    - "-Ibuild/_deps/imgui-src/backends"
+    - "-Ibuild/_deps/glfw-src/include"
+    - "-Iinclude" 

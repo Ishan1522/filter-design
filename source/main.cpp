@@ -1,9 +1,10 @@
-
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>   // Needs linking with glfw
 #include <stdio.h>
+#include <memory>  // for std::make_unique
+#include <utility> // for std::move
 
 using namespace std;
 
@@ -37,19 +38,10 @@ int main(int, char**) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
-
-    // Create window manager
-    glass::WindowManager windowManager;
-    
-    // Create a plot window
-    auto plot = std::make_unique<glass::Plot>("Frequency Response");
-    plot->SetVisible(true);
-    windowManager.AddWindow(std::move(plot));
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {
@@ -97,9 +89,6 @@ int main(int, char**) {
         ImGui::End();
 
         // Display windows
-        windowManager.Display();
-
-        // Rendering
         ImGui::Render();
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);

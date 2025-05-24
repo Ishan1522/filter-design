@@ -27,7 +27,7 @@ set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
 
 include(ExternalProject)
 ExternalProject_Add(wpilib-populate
-                     "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/wpilibsuite/allwpilib.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "2025.1.1"
+                     "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/wpilibsuite/allwpilib.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "v2025.3.2"
                     SOURCE_DIR          "C:/Users/ishan/filter-design-1/build/_deps/wpilib-src"
                     BINARY_DIR          "C:/Users/ishan/filter-design-1/build/_deps/wpilib-build"
                     CONFIGURE_COMMAND   ""

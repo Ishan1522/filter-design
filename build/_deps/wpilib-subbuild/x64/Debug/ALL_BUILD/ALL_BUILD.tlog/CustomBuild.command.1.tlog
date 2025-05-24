@@ -1,0 +1,10 @@
+^C:\USERS\ISHAN\FILTER-DESIGN-1\BUILD\_DEPS\WPILIB-SUBBUILD\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/ishan/filter-design-1/build/_deps/wpilib-subbuild -BC:/Users/ishan/filter-design-1/build/_deps/wpilib-subbuild --check-stamp-file C:/Users/ishan/filter-design-1/build/_deps/wpilib-subbuild/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

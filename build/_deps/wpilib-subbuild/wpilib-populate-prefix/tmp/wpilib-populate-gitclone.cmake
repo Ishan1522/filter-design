@@ -52,13 +52,13 @@ endif()
 
 execute_process(
   COMMAND "C:/Program Files/Git/cmd/git.exe"
-          checkout "2025.1.1" --
+          checkout "v2025.3.2" --
   WORKING_DIRECTORY "C:/Users/ishan/filter-design-1/build/_deps/wpilib-src"
   RESULT_VARIABLE error_code
   ${maybe_show_command}
 )
 if(error_code)
-  message(FATAL_ERROR "Failed to checkout tag: '2025.1.1'")
+  message(FATAL_ERROR "Failed to checkout tag: 'v2025.3.2'")
 endif()
 
 set(init_submodules TRUE)

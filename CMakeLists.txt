@@ -12,7 +12,7 @@ include(FetchContent)
 FetchContent_Declare(
     wpilib
     GIT_REPOSITORY https://github.com/wpilibsuite/allwpilib.git
-    GIT_TAG 2025.1.1
+    GIT_TAG v2025.3.2
 )
 FetchContent_MakeAvailable(wpilib)
 

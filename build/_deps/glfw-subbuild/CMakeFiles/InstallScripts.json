@@ -1,7 +1,7 @@
 {
 	"InstallScripts" : 
 	[
-		"C:/Users/ishan/filter-design-1/build/_deps/glfw-subbuild/cmake_install.cmake"
+		"C:/Users/ishan/filter-design/build/_deps/glfw-subbuild/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

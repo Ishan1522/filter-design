@@ -1,44 +1,44 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\4de0948cf8ad9b27a100ddfafe7ce817\imgui-populate-mkdir.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\9ccd26b5149fef17d2d17e7ea831cd20\imgui-populate-mkdir.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\4de0948cf8ad9b27a100ddfafe7ce817\imgui-populate-download.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\9ccd26b5149fef17d2d17e7ea831cd20\imgui-populate-download.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\4de0948cf8ad9b27a100ddfafe7ce817\imgui-populate-update.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\9ccd26b5149fef17d2d17e7ea831cd20\imgui-populate-update.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\4de0948cf8ad9b27a100ddfafe7ce817\imgui-populate-patch.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\9ccd26b5149fef17d2d17e7ea831cd20\imgui-populate-patch.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\4de0948cf8ad9b27a100ddfafe7ce817\imgui-populate-configure.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\9ccd26b5149fef17d2d17e7ea831cd20\imgui-populate-configure.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\4de0948cf8ad9b27a100ddfafe7ce817\imgui-populate-build.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\9ccd26b5149fef17d2d17e7ea831cd20\imgui-populate-build.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\4de0948cf8ad9b27a100ddfafe7ce817\imgui-populate-install.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\9ccd26b5149fef17d2d17e7ea831cd20\imgui-populate-install.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\4de0948cf8ad9b27a100ddfafe7ce817\imgui-populate-test.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\9ccd26b5149fef17d2d17e7ea831cd20\imgui-populate-test.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\9672539389437e0fa539026bf9f4872f\imgui-populate-complete.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\c3df2348d0b9f1413cf6c1aab9238b23\imgui-populate-complete.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\84fcfa784ed4cc054f067ca883fdebcc\imgui-populate.rule">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\a65a0e85e116d69e019ce4ef930573c9\imgui-populate.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\CMakeFiles\imgui-populate" />
+    <None Include="C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\CMakeFiles\imgui-populate" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{A4E0BC68-6924-3749-AA09-90212F1EAC7E}</UniqueIdentifier>
+      <UniqueIdentifier>{2770221D-9A9B-37E2-9C0E-366CEEF22EB4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

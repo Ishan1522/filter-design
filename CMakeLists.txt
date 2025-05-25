@@ -18,6 +18,12 @@ project(filter-design
 # Include FetchContent for dependencies
 include(FetchContent)
 
+# Set GLFW build options before declaring it
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+
 # Fetch ImGui
 FetchContent_Declare(
     imgui
@@ -73,11 +79,11 @@ target_include_directories(${PROJECT_NAME}
 # Find OpenGL
 find_package(OpenGL REQUIRED)
 
-# Link libraries
+# Link libraries in correct order
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        glfw
         OpenGL::GL
+        glfw
 )
 
 # Enable position independent code
@@ -87,3 +93,11 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+# Add Windows-specific definitions
+if(WIN32)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        GLFW_INCLUDE_NONE
+    )
+endif()

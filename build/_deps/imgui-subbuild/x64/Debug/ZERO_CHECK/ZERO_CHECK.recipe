@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\ishan\filter-design-1\build\_deps\imgui-subbuild\x64\Debug\ZERO_CHECK</FullPath>
+      <FullPath>C:\Users\ishan\filter-design\build\_deps\imgui-subbuild\x64\Debug\ZERO_CHECK</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

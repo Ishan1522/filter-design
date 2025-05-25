@@ -13,7 +13,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8D238BAD-8D54-3BE9-B63F-B031746EFA6E}</ProjectGuid>
+    <ProjectGuid>{D8C2CF44-C2B3-3CA1-92F7-0D5522FE69B4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
@@ -49,11 +49,11 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\ishan\filter-design-1\build\_deps\glfw-subbuild\CMakeLists.txt">
+    <CustomBuild Include="C:\Users\ishan\filter-design\build\_deps\glfw-subbuild\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/ishan/filter-design-1/build/_deps/glfw-subbuild/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/ishan/filter-design/build/_deps/glfw-subbuild/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/ishan/filter-design-1/build/_deps/glfw-subbuild -BC:/Users/ishan/filter-design-1/build/_deps/glfw-subbuild --check-stamp-file C:/Users/ishan/filter-design-1/build/_deps/glfw-subbuild/CMakeFiles/generate.stamp
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/ishan/filter-design/build/_deps/glfw-subbuild -BC:/Users/ishan/filter-design/build/_deps/glfw-subbuild --check-stamp-file C:/Users/ishan/filter-design/build/_deps/glfw-subbuild/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -61,8 +61,8 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\PatchInfo.txt.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\RepositoryInfo.txt.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\UpdateInfo.txt.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\cfgcmd.txt.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\gitclone.cmake.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\gitupdate.cmake.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\mkdirs.cmake.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\Platform\WindowsPaths.cmake;C:\Users\ishan\filter-design-1\build\_deps\glfw-subbuild\CMakeFiles\4.0.0\CMakeSystem.cmake;C:\Users\ishan\filter-design-1\build\_deps\glfw-subbuild\glfw-populate-prefix\tmp\glfw-populate-mkdirs.cmake;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\ishan\filter-design-1\build\_deps\glfw-subbuild\CMakeFiles\generate.stamp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeDetermineSystem.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeSystem.cmake.in;C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\PatchInfo.txt.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\RepositoryInfo.txt.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\UpdateInfo.txt.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\cfgcmd.txt.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\gitclone.cmake.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\gitupdate.cmake.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\mkdirs.cmake.in;C:\Program Files\CMake\share\cmake-4.0\Modules\ExternalProject\shared_internal_commands.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.0\Modules\Platform\WindowsPaths.cmake;C:\Users\ishan\filter-design\build\_deps\glfw-subbuild\CMakeFiles\4.0.0\CMakeSystem.cmake;C:\Users\ishan\filter-design\build\_deps\glfw-subbuild\glfw-populate-prefix\tmp\glfw-populate-mkdirs.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\ishan\filter-design\build\_deps\glfw-subbuild\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
@@ -70,14 +70,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="C:\Users\ishan\filter-design-1\build\_deps\glfw-subbuild\ZERO_CHECK.vcxproj">
-      <Project>{E80FA4A2-2101-3C0D-B7CB-4E2CDA122ACC}</Project>
+    <ProjectReference Include="C:\Users\ishan\filter-design\build\_deps\glfw-subbuild\ZERO_CHECK.vcxproj">
+      <Project>{1323CCEB-6D4D-3BCF-9F92-100A4463FC6E}</Project>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\ishan\filter-design-1\build\_deps\glfw-subbuild\glfw-populate.vcxproj">
-      <Project>{DBDFC5E1-E7B5-3CA9-ABC4-CB4F567E907C}</Project>
+    <ProjectReference Include="C:\Users\ishan\filter-design\build\_deps\glfw-subbuild\glfw-populate.vcxproj">
+      <Project>{21D30ECA-1039-37E6-9682-2931AA3B0767}</Project>
       <Name>glfw-populate</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>

@@ -99,5 +99,18 @@ if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         _CRT_SECURE_NO_WARNINGS
         GLFW_INCLUDE_NONE
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+        WINDOWS_LEAN_AND_MEAN
     )
 endif()
+
+# Add OpenGL definitions
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    GL_GLEXT_PROTOTYPES
+)
+
+# Add ImGui definitions
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    IMGUI_IMPL_OPENGL_LOADER_GL3W
+)

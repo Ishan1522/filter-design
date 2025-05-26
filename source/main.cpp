@@ -1,10 +1,12 @@
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-#include <GLFW/glfw3.h>   // Needs linking with glfw
+
 #include <stdio.h>
 #include <memory>  // for std::make_unique
 #include <utility> // for std::move
+
+// OpenGL function declarations
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
 
 using namespace std;
 

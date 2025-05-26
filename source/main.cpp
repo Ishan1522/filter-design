@@ -1,39 +1,40 @@
-
 #include <stdio.h>
-#include <memory>  // for std::make_unique
-#include <utility> // for std::move
+#include <memory>
+#include <utility>
 
-// OpenGL function declarations
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glext.h>
+// ImGui headers
+#include "../imgui/imgui.h"
+#include "../imgui/backends/imgui_impl_glfw.h"
+#include "../imgui/backends/imgui_impl_opengl3.h"
 
-using namespace std;
+// OpenGL loader
+#include <glad/glad.h>
 
-// GLFW error callback
-static void glfw_error_callback(int error, const char* description) {
-    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
-}
+// GLFW
+#include <GLFW/glfw3.h>
 
-int main(int, char**) {
-    // Setup GLFW
-    glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit()) return 1;
+int main(int argc, char** argv) {
+    // Initialize GLFW
+    if (!glfwInit()) {
+        fprintf(stderr, "Failed to initialize GLFW\n");
+        return 1;
+    }
 
-    // GL 3.3 + GLSL 330
-    const char* glsl_version = "#version 330";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    // Create window
+    // Create window with OpenGL context
     GLFWwindow* window = glfwCreateWindow(1280, 720, "Filter Design Tool", NULL, NULL);
     if (!window) {
+        fprintf(stderr, "Failed to create GLFW window\n");
         glfwTerminate();
         return 1;
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
+
+    // Initialize OpenGL loader
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        fprintf(stderr, "Failed to initialize GLAD\n");
+        return 1;
+    }
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -43,7 +44,7 @@ int main(int, char**) {
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    ImGui_ImplOpenGL3_Init("#version 130");
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {
@@ -90,7 +91,7 @@ int main(int, char**) {
         
         ImGui::End();
 
-        // Display windows
+        // Rendering
         ImGui::Render();
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -106,6 +107,7 @@ int main(int, char**) {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
     glfwDestroyWindow(window);
     glfwTerminate();
 

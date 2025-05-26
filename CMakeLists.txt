@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 
+# Set vcpkg toolchain file
+set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+
 # Force Visual Studio 2022
 set(CMAKE_GENERATOR "Visual Studio 17 2022")
 set(CMAKE_GENERATOR_PLATFORM "x64")
@@ -15,31 +18,9 @@ project(filter-design
     LANGUAGES CXX
 )
 
-# Include FetchContent for dependencies
-include(FetchContent)
-
-# Set GLFW build options before declaring it
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-
-# Fetch ImGui
-FetchContent_Declare(
-    imgui
-    GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.90.1
-)
-
-# Fetch GLFW
-FetchContent_Declare(
-    glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.3.8
-)
-
-# Make dependencies available
-FetchContent_MakeAvailable(imgui glfw)
+# Find required packages
+find_package(glfw3 REQUIRED)
+find_package(glad REQUIRED)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -56,13 +37,13 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Add ImGui source files
 set(IMGUI_SOURCES
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_demo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_draw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_tables.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_widgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_glfw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_opengl3.cpp
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${IMGUI_SOURCES})
@@ -70,24 +51,13 @@ target_sources(${PROJECT_NAME} PRIVATE ${IMGUI_SOURCES})
 # Add include directories
 target_include_directories(${PROJECT_NAME} 
     PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${imgui_SOURCE_DIR}
-        ${imgui_SOURCE_DIR}/backends
-        ${glfw_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends
 )
 
-# Find OpenGL
-find_package(OpenGL REQUIRED)
-
-# Link libraries in correct order
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        OpenGL::GL
-        glfw
-)
-
-# Enable position independent code
-set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+# Link libraries
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad::glad)
 
 # Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -98,19 +68,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         _CRT_SECURE_NO_WARNINGS
-        GLFW_INCLUDE_NONE
         NOMINMAX
         WIN32_LEAN_AND_MEAN
         WINDOWS_LEAN_AND_MEAN
     )
 endif()
-
-# Add OpenGL definitions
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-    GL_GLEXT_PROTOTYPES
-)
-
-# Add ImGui definitions
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-    IMGUI_IMPL_OPENGL_LOADER_GL3W
-)

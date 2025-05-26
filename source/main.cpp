@@ -2,19 +2,15 @@
 #include <memory>
 #include <utility>
 
-// ImGui headers
-#include "../imgui/imgui.h"
-#include "../imgui/backends/imgui_impl_glfw.h"
-#include "../imgui/backends/imgui_impl_opengl3.h"
+#include "imgui/imgui.h"
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_opengl3.h"
 
-// OpenGL loader
 #include <glad/glad.h>
 
-// GLFW
 #include <GLFW/glfw3.h>
 
 int main(int argc, char** argv) {
-    // Initialize GLFW
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         return 1;

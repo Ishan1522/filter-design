@@ -1,6 +1,9 @@
 CompileFlags:
   Add: 
-    - "-Ibuild/_deps/imgui-src"
-    - "-Ibuild/_deps/imgui-src/backends"
-    - "-Ibuild/_deps/glfw-src/include"
-    - "-Iinclude" 
+    - "-I."
+    - "-Iimgui"
+    - "-Iimgui/backends"
+    - "-Iinclude"
+    - "-IC:/vcpkg/installed/x64-windows/include"
+    - "-IC:/vcpkg/installed/x64-windows/include/glad"
+    - "-IC:/vcpkg/installed/x64-windows/include/GLFW" 

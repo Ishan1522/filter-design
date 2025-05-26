@@ -19,8 +19,8 @@ project(filter-design
 )
 
 # Find required packages
-find_package(glfw3 REQUIRED)
-find_package(glad REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(glad CONFIG REQUIRED)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -57,7 +57,10 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # Link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad::glad)
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    glfw
+    glad
+)
 
 # Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

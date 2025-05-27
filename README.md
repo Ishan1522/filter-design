@@ -1,4 +1,4 @@
-# Filter Design Application
+# Filter Design Application (GOALS)
 
 A node-based filter design application using ImGui and ImNodes.
 

@@ -3,6 +3,9 @@ build/
 out/
 bin/
 lib/
+cmake-build*/
+cmake-build-debug*/
+cmake-build-release*/
 
 # CMake generated files
 CMakeFiles/
@@ -14,6 +17,7 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps/
+.cmake/
 
 # Visual Studio files
 .vs/
@@ -26,6 +30,15 @@ _deps/
 *.userosscache
 *.sdf
 *.opensdf
+*.VC.db
+*.VC.VC.opendb
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
 *.VC.db
 *.VC.VC.opendb
 
@@ -60,12 +73,21 @@ _deps/
 *.su
 *.idb
 *.pdb
+*.ilk
+*.exp
+*.manifest
 
 # Windows specific
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+*.lnk
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
 
 # IDE specific
 .vscode/
@@ -73,6 +95,10 @@ $RECYCLE.BIN/
 *.swp
 *.swo
 *~
+*.code-workspace
+.history/
 
 # Project specific
-*.log 
+*.log
+vcpkg_installed/
+vcpkg-manifest-install.log 

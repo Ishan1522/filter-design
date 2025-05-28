@@ -3,6 +3,11 @@
 #include <glad/glad.h>
 #include "../../imgui/backends/imgui_impl_glfw.h"
 #include "../../imgui/backends/imgui_impl_opengl3.h"
+#include <cmath>
+#include <sstream>
+#include <fstream>
+
+#define M_PI 3.14159265358979323846
 
 namespace ui {
 
@@ -126,6 +131,9 @@ void FilterDesignUI::renderNodeEditor() {
     if (ImNodes::IsLinkCreated(&fromNode, &fromPin, &toNode, &toPin)) {
         links_[nextLinkId_] = {nextLinkId_, fromNode, fromPin, toNode, toPin};
         nextLinkId_++;
+        
+        // Process data through the new connection
+        processFilters();
     }
 
     // Handle deleted links
@@ -142,10 +150,10 @@ void FilterDesignUI::renderNodeMenu() {
         if (ImGui::BeginMenu("Add Node")) {
             if (ImGui::MenuItem("Input")) createNode(NodeType::Input);
             if (ImGui::MenuItem("Output")) createNode(NodeType::Output);
-            if (ImGui::MenuItem("Low Pass")) createNode(NodeType::LowPass);
-            if (ImGui::MenuItem("High Pass")) createNode(NodeType::HighPass);
+            if (ImGui::MenuItem("Butterworth")) createNode(NodeType::Butterworth);
+            if (ImGui::MenuItem("Chebyshev")) createNode(NodeType::Chebyshev);
+            if (ImGui::MenuItem("Notch")) createNode(NodeType::Notch);
             if (ImGui::MenuItem("Band Pass")) createNode(NodeType::BandPass);
-            if (ImGui::MenuItem("Gain")) createNode(NodeType::Gain);
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -159,13 +167,23 @@ void FilterDesignUI::renderNode(int nodeId, const std::string& title) {
     ImGui::TextUnformatted(title.c_str());
     ImNodes::EndNodeTitleBar();
 
-    const auto& node = nodes_[nodeId];
+    auto& node = nodes_[nodeId];
 
     // Render input pins
     for (int i = 0; i < node.inputPins.size(); ++i) {
         ImNodes::BeginInputAttribute(node.inputPins[i]);
         ImGui::Text("Input %d", i);
         ImNodes::EndInputAttribute();
+    }
+
+    // Render filter parameters
+    renderFilterParameters(nodeId);
+
+    // Render frequency response if it's a filter node
+    if (node.filterType != Node::FilterType::None) {
+        renderFrequencyResponse(nodeId);
+        renderPoleZeroPlot(nodeId);
+        renderCodeExport(nodeId);
     }
 
     // Render output pins
@@ -178,8 +196,281 @@ void FilterDesignUI::renderNode(int nodeId, const std::string& title) {
     ImNodes::EndNode();
 }
 
-void FilterDesignUI::renderLink(int linkId, int fromNode, int fromPin, int toNode, int toPin) {
-    ImNodes::Link(linkId, fromPin, toPin);
+void FilterDesignUI::renderFilterParameters(int nodeId) {
+    auto& node = nodes_[nodeId];
+    
+    if (node.filterType == Node::FilterType::None) {
+        return;
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Filter Parameters");
+
+    // Common parameters
+    if (ImGui::DragInt("Order", &node.order, 1, 1, 10)) {
+        calculateFilterCoefficients(node);
+    }
+    if (ImGui::DragFloat("Cutoff (Hz)", &node.ui_cutoffFreq, 1.0f, 1.0f, 20000.0f)) {
+        node.cutoffFreq = static_cast<double>(node.ui_cutoffFreq);
+        calculateFilterCoefficients(node);
+    }
+    if (ImGui::DragFloat("Sample Rate (Hz)", &node.ui_sampleRate, 1.0f, 1000.0f, 192000.0f)) {
+        node.sampleRate = static_cast<double>(node.ui_sampleRate);
+        calculateFilterCoefficients(node);
+    }
+
+    // Type-specific parameters
+    switch (node.filterType) {
+        case Node::FilterType::Chebyshev:
+            if (ImGui::DragFloat("Ripple (dB)", &node.ui_ripple, 0.1f, 0.1f, 10.0f)) {
+                node.ripple = static_cast<double>(node.ui_ripple);
+                calculateFilterCoefficients(node);
+            }
+            break;
+        case Node::FilterType::Notch:
+        case Node::FilterType::BandPass:
+            if (ImGui::DragFloat("Bandwidth (Hz)", &node.ui_bandwidth, 1.0f, 1.0f, 10000.0f)) {
+                node.bandwidth = static_cast<double>(node.ui_bandwidth);
+                calculateFilterCoefficients(node);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void FilterDesignUI::renderFrequencyResponse(int nodeId) {
+    auto& node = nodes_[nodeId];
+    
+    ImGui::Separator();
+    if (ImGui::CollapsingHeader("Frequency Response")) {
+        // TODO: Use ImPlot to show frequency response
+        // For now, just show coefficients
+        ImGui::Text("Coefficients:");
+        ImGui::Text("b = [");
+        for (size_t i = 0; i < node.b.size(); ++i) {
+            ImGui::SameLine();
+            ImGui::Text("%.6f%s", node.b[i], i < node.b.size() - 1 ? ", " : "");
+        }
+        ImGui::Text("]");
+        
+        ImGui::Text("a = [");
+        for (size_t i = 0; i < node.a.size(); ++i) {
+            ImGui::SameLine();
+            ImGui::Text("%.6f%s", node.a[i], i < node.a.size() - 1 ? ", " : "");
+        }
+        ImGui::Text("]");
+    }
+}
+
+void FilterDesignUI::renderPoleZeroPlot(int nodeId) {
+    auto& node = nodes_[nodeId];
+    
+    ImGui::Separator();
+    if (ImGui::CollapsingHeader("Pole-Zero Plot")) {
+        // TODO: Use ImPlot to show pole-zero plot
+        // For now, just show poles and zeros
+        ImGui::Text("Poles:");
+        for (const auto& pole : node.poles) {
+            ImGui::Text("(%.3f, %.3f)", pole.real(), pole.imag());
+        }
+        
+        ImGui::Text("Zeros:");
+        for (const auto& zero : node.zeros) {
+            ImGui::Text("(%.3f, %.3f)", zero.real(), zero.imag());
+        }
+    }
+}
+
+void FilterDesignUI::renderCodeExport(int nodeId) {
+    auto& node = nodes_[nodeId];
+    
+    ImGui::Separator();
+    if (ImGui::CollapsingHeader("Export Code")) {
+        std::string code = generateLinearFilterCode(node);
+        
+        ImGui::InputTextMultiline("##code", const_cast<char*>(code.c_str()), 
+            code.size(), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 10),
+            ImGuiInputTextFlags_ReadOnly);
+            
+        if (ImGui::Button("Copy to Clipboard")) {
+            exportToClipboard(code);
+        }
+        
+        ImGui::SameLine();
+        
+        if (ImGui::Button("Save to File")) {
+            // TODO: Add file dialog
+            exportToFile(code, "filter_" + std::to_string(nodeId) + ".cpp");
+        }
+    }
+}
+
+void FilterDesignUI::processFilters() {
+    // Build a map of node inputs based on links
+    std::unordered_map<int, int> inputFrom;
+    for (const auto& [id, link] : links_) {
+        inputFrom[link.toNode] = link.fromNode;
+    }
+
+    // Process each node
+    for (auto& [id, node] : nodes_) {
+        // Get input data from connected node
+        auto it = inputFrom.find(id);
+        if (it != inputFrom.end()) {
+            const auto& inputNode = nodes_[it->second];
+            node.inputData = inputNode.outputData;
+        }
+
+        // Process the data if it's a filter node
+        if (node.filterType != Node::FilterType::None) {
+            node.outputData = processBlock(node, node.inputData);
+        } else {
+            node.outputData = node.inputData;
+        }
+    }
+}
+
+void FilterDesignUI::calculateFilterCoefficients(Node& node) {
+    // Reset coefficients
+    node.b.clear();
+    node.a.clear();
+    node.poles.clear();
+    node.zeros.clear();
+
+    // Calculate normalized cutoff frequency
+    double wc = 2.0 * M_PI * node.cutoffFreq / node.sampleRate;
+
+    switch (node.filterType) {
+        case Node::FilterType::Butterworth: {
+            // Calculate poles for Butterworth filter
+            for (int k = 0; k < node.order; ++k) {
+                double angle = M_PI * (2.0 * k + 1) / (2.0 * node.order);
+                std::complex<double> pole = std::exp(std::complex<double>(0, angle));
+                node.poles.push_back(wc * pole);
+            }
+
+            // Convert poles to coefficients
+            node.a.resize(node.order + 1);
+            node.b.resize(node.order + 1);
+            std::fill(node.a.begin(), node.a.end(), 0.0);
+            std::fill(node.b.begin(), node.b.end(), 0.0);
+            
+            node.a[0] = 1.0;
+            for (size_t i = 0; i < node.poles.size(); ++i) {
+                node.a[i + 1] = -std::real(node.poles[i]);
+            }
+
+            // Normalize coefficients
+            double gain = 1.0;
+            for (const auto& pole : node.poles) {
+                gain *= std::abs(pole);
+            }
+            for (double& b : node.b) {
+                b /= gain;
+            }
+            break;
+        }
+        // TODO: Add other filter types
+        default:
+            break;
+    }
+
+    // Calculate frequency response and pole-zero plot
+    calculateFrequencyResponse(node);
+    calculatePoleZero(node);
+}
+
+double FilterDesignUI::processSample(Node& node, double input) {
+    // Direct form II implementation
+    double w = input;
+    for (size_t i = 1; i < node.a.size(); ++i) {
+        w -= node.a[i] * node.yHistory[i - 1];
+    }
+    
+    double y = 0.0;
+    for (size_t i = 0; i < node.b.size(); ++i) {
+        y += node.b[i] * node.xHistory[i];
+    }
+    
+    // Update state
+    for (size_t i = node.xHistory.size() - 1; i > 0; --i) {
+        node.xHistory[i] = node.xHistory[i - 1];
+    }
+    node.xHistory[0] = w;
+    
+    for (size_t i = node.yHistory.size() - 1; i > 0; --i) {
+        node.yHistory[i] = node.yHistory[i - 1];
+    }
+    node.yHistory[0] = y;
+    
+    return y;
+}
+
+std::vector<double> FilterDesignUI::processBlock(Node& node, const std::vector<double>& input) {
+    std::vector<double> output;
+    output.reserve(input.size());
+    
+    // Initialize state if needed
+    if (node.xHistory.size() != node.b.size()) {
+        node.xHistory.resize(node.b.size(), 0.0);
+    }
+    if (node.yHistory.size() != node.a.size()) {
+        node.yHistory.resize(node.a.size(), 0.0);
+    }
+    
+    for (double sample : input) {
+        output.push_back(processSample(node, sample));
+    }
+    
+    return output;
+}
+
+void FilterDesignUI::calculateFrequencyResponse(Node& node) {
+    // TODO: Implement frequency response calculation
+}
+
+void FilterDesignUI::calculatePoleZero(Node& node) {
+    // TODO: Implement pole-zero calculation
+}
+
+std::string FilterDesignUI::generateLinearFilterCode(const Node& node) {
+    std::stringstream ss;
+    ss << "#include <frc/filter/LinearFilter.h>\n\n";
+    ss << "// Generated filter coefficients\n";
+    ss << "frc::LinearFilter<double> filter({\n";
+    
+    // Output numerator coefficients
+    ss << "    // Numerator coefficients (b)\n";
+    for (size_t i = 0; i < node.b.size(); ++i) {
+        ss << "    " << node.b[i];
+        if (i < node.b.size() - 1) ss << ",";
+        ss << "\n";
+    }
+    ss << "}, {\n";
+    
+    // Output denominator coefficients
+    ss << "    // Denominator coefficients (a)\n";
+    for (size_t i = 0; i < node.a.size(); ++i) {
+        ss << "    " << node.a[i];
+        if (i < node.a.size() - 1) ss << ",";
+        ss << "\n";
+    }
+    ss << "});\n";
+    
+    return ss.str();
+}
+
+void FilterDesignUI::exportToClipboard(const std::string& code) {
+    ImGui::SetClipboardText(code.c_str());
+}
+
+void FilterDesignUI::exportToFile(const std::string& code, const std::string& filename) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        file << code;
+        file.close();
+    }
 }
 
 void FilterDesignUI::createNode(NodeType type) {
@@ -195,25 +486,48 @@ void FilterDesignUI::createNode(NodeType type) {
             node.title = "Output";
             node.inputPins.push_back(nextNodeId_++);
             break;
-        case NodeType::LowPass:
-            node.title = "Low Pass";
+        case NodeType::Butterworth:
+            node.title = "Butterworth";
+            node.filterType = Node::FilterType::Butterworth;
             node.inputPins.push_back(nextNodeId_++);
             node.outputPins.push_back(nextNodeId_++);
+            // Initialize UI parameters
+            node.ui_cutoffFreq = static_cast<float>(node.cutoffFreq);
+            node.ui_sampleRate = static_cast<float>(node.sampleRate);
+            calculateFilterCoefficients(node);
             break;
-        case NodeType::HighPass:
-            node.title = "High Pass";
+        case NodeType::Chebyshev:
+            node.title = "Chebyshev";
+            node.filterType = Node::FilterType::Chebyshev;
             node.inputPins.push_back(nextNodeId_++);
             node.outputPins.push_back(nextNodeId_++);
+            // Initialize UI parameters
+            node.ui_cutoffFreq = static_cast<float>(node.cutoffFreq);
+            node.ui_sampleRate = static_cast<float>(node.sampleRate);
+            node.ui_ripple = static_cast<float>(node.ripple);
+            calculateFilterCoefficients(node);
+            break;
+        case NodeType::Notch:
+            node.title = "Notch";
+            node.filterType = Node::FilterType::Notch;
+            node.inputPins.push_back(nextNodeId_++);
+            node.outputPins.push_back(nextNodeId_++);
+            // Initialize UI parameters
+            node.ui_cutoffFreq = static_cast<float>(node.cutoffFreq);
+            node.ui_sampleRate = static_cast<float>(node.sampleRate);
+            node.ui_bandwidth = static_cast<float>(node.bandwidth);
+            calculateFilterCoefficients(node);
             break;
         case NodeType::BandPass:
             node.title = "Band Pass";
+            node.filterType = Node::FilterType::BandPass;
             node.inputPins.push_back(nextNodeId_++);
             node.outputPins.push_back(nextNodeId_++);
-            break;
-        case NodeType::Gain:
-            node.title = "Gain";
-            node.inputPins.push_back(nextNodeId_++);
-            node.outputPins.push_back(nextNodeId_++);
+            // Initialize UI parameters
+            node.ui_cutoffFreq = static_cast<float>(node.cutoffFreq);
+            node.ui_sampleRate = static_cast<float>(node.sampleRate);
+            node.ui_bandwidth = static_cast<float>(node.bandwidth);
+            calculateFilterCoefficients(node);
             break;
     }
 
@@ -226,6 +540,10 @@ void FilterDesignUI::deleteNode(int nodeId) {
 
 void FilterDesignUI::deleteLink(int linkId) {
     links_.erase(linkId);
+}
+
+void FilterDesignUI::renderLink(int linkId, int fromNode, int fromPin, int toNode, int toPin) {
+    ImNodes::Link(linkId, fromPin, toPin);
 }
 
 } // namespace ui 

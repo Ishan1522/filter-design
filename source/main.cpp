@@ -6,15 +6,13 @@
 
 #include "ui/FilterDesignUI.h"
 
-int main(int argc, char** argv) {
+void main() {
     // Create and initialize the UI
-    auto ui = std::make_unique<ui::FilterDesignUI>();
+    const auto ui = std::make_unique<ui::FilterDesignUI>();
     if (!ui->initialize()) {
-        return 1;
+        return;
     }
 
     // Run the main loop
     ui->run();
-
-    return 0;
 }

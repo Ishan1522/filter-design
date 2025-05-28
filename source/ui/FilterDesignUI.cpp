@@ -108,9 +108,18 @@ void FilterDesignUI::run() {
 }
 
 void FilterDesignUI::renderNodeEditor() {
-    ImGui::Begin("Filter Design");
+    // Set window size and position
+    ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
+    
+    ImGui::Begin("Filter Design", nullptr, ImGuiWindowFlags_MenuBar);
 
     renderNodeMenu();
+
+    // Create a default node if none exist
+    if (nodes_.empty()) {
+        createNode(NodeType::Butterworth);
+    }
 
     ImNodes::BeginNodeEditor();
 

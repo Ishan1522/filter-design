@@ -39,13 +39,15 @@ set(SOURCES
     source/main.cpp
     source/ui/FilterDesignUI.cpp
     source/filter/LowPassFilter.cpp
+    source/pipeline/FilterPipeline.cpp
 )
 
 # Add header files
 set(HEADERS
     include/filter/Filter.h
     include/filter/LowPassFilter.h
-    source/ui/FilterDesignUI.h
+    include/ui/FilterDesignUI.h
+    include/pipeline/FilterPipeline.h
 )
 
 # Create executable
@@ -70,6 +72,12 @@ target_include_directories(imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends
         ${GLFW_INCLUDE_DIRS}
         ${vcpkg_installed_DIR}/x64-windows/include
+)
+
+# Add include directories for imnodes
+target_include_directories(imnodes
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/imnodes
 )
 
 # Link libraries

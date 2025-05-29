@@ -1,8 +1,10 @@
-#include "FilterDesignUI.h"
+#include "../../include/ui/FilterDesignUI.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
-#include "../../imgui/backends/imgui_impl_glfw.h"
-#include "../../imgui/backends/imgui_impl_opengl3.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "imnodes.h"
 #include <cmath>
 #include <sstream>
 #include <fstream>
@@ -11,7 +13,9 @@
 
 namespace ui {
 
-FilterDesignUI::FilterDesignUI() = default;
+FilterDesignUI::FilterDesignUI() {
+    pipeline_ = std::make_unique<pipeline::FilterPipeline>();
+}
 
 FilterDesignUI::~FilterDesignUI() {
     cleanup();
@@ -316,26 +320,97 @@ void FilterDesignUI::renderCodeExport(int nodeId) {
 }
 
 void FilterDesignUI::processFilters() {
-    // Build a map of node inputs based on links
-    std::unordered_map<int, int> inputFrom;
-    for (const auto& [id, link] : links_) {
-        inputFrom[link.toNode] = link.fromNode;
-    }
-
-    // Process each node
+    // Update pipeline nodes and connections
     for (auto& [id, node] : nodes_) {
-        // Get input data from connected node
-        auto it = inputFrom.find(id);
-        if (it != inputFrom.end()) {
-            const auto& inputNode = nodes_[it->second];
-            node.inputData = inputNode.outputData;
-        }
+        updatePipelineNode(node);
+    }
+    updatePipelineConnections();
 
-        // Process the data if it's a filter node
-        if (node.filterType != Node::FilterType::None) {
-            node.outputData = processBlock(node, node.inputData);
-        } else {
-            node.outputData = node.inputData;
+    // Process data through the pipeline
+    for (auto& [id, node] : nodes_) {
+        if (node.filterType == Node::FilterType::Input) {
+            // For input nodes, process through the pipeline
+            if (!node.inputData.empty()) {
+                node.outputData = pipeline_->processData(node.inputData);
+                
+                // Propagate output to connected nodes
+                for (const auto& [linkId, link] : links_) {
+                    if (link.fromNode == id) {
+                        nodes_[link.toNode].inputData = node.outputData;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void FilterDesignUI::updatePipelineNode(Node& node) {
+    std::map<std::string, double> params;
+    
+    // Add common parameters
+    params["order"] = static_cast<double>(node.order);
+    params["cutoffFreq"] = node.cutoffFreq;
+    params["sampleRate"] = node.sampleRate;
+    
+    // Add type-specific parameters
+    switch (node.filterType) {
+        case Node::FilterType::Chebyshev:
+            params["ripple"] = node.ripple;
+            break;
+        case Node::FilterType::Notch:
+        case Node::FilterType::BandPass:
+            params["bandwidth"] = node.bandwidth;
+            break;
+        default:
+            break;
+    }
+    
+    // Convert node type to string
+    std::string type;
+    switch (node.filterType) {
+        case Node::FilterType::Butterworth:
+            type = "Butterworth";
+            break;
+        case Node::FilterType::Chebyshev:
+            type = "Chebyshev";
+            break;
+        case Node::FilterType::Notch:
+            type = "Notch";
+            break;
+        case Node::FilterType::BandPass:
+            type = "BandPass";
+            break;
+        default:
+            return;  // Skip non-filter nodes
+    }
+    
+    // Create or update pipeline node
+    if (node.pipelineNodeId.empty()) {
+        node.pipelineNodeId = pipeline_->addNode(type, params);
+    } else {
+        pipeline_->setNodeParameters(node.pipelineNodeId, params);
+    }
+}
+
+void FilterDesignUI::updatePipelineConnections() {
+    // Clear all existing connections
+    for (const auto& [id, node] : nodes_) {
+        if (!node.pipelineNodeId.empty()) {
+            for (const auto& [linkId, link] : links_) {
+                if (link.fromNode == id) {
+                    pipeline_->disconnectNodes(node.pipelineNodeId, nodes_[link.toNode].pipelineNodeId);
+                }
+            }
+        }
+    }
+    
+    // Add new connections
+    for (const auto& [linkId, link] : links_) {
+        const auto& fromNode = nodes_[link.fromNode];
+        const auto& toNode = nodes_[link.toNode];
+        
+        if (!fromNode.pipelineNodeId.empty() && !toNode.pipelineNodeId.empty()) {
+            pipeline_->connectNodes(fromNode.pipelineNodeId, toNode.pipelineNodeId);
         }
     }
 }
@@ -541,13 +616,27 @@ void FilterDesignUI::createNode(NodeType type) {
     }
 
     nodes_[node.id] = node;
+    updatePipelineNode(nodes_[node.id]);
 }
 
 void FilterDesignUI::deleteNode(int nodeId) {
+    auto it = nodes_.find(nodeId);
+    if (it != nodes_.end() && !it->second.pipelineNodeId.empty()) {
+        pipeline_->removeNode(it->second.pipelineNodeId);
+    }
     nodes_.erase(nodeId);
 }
 
 void FilterDesignUI::deleteLink(int linkId) {
+    auto it = links_.find(linkId);
+    if (it != links_.end()) {
+        const auto& fromNode = nodes_[it->second.fromNode];
+        const auto& toNode = nodes_[it->second.toNode];
+        
+        if (!fromNode.pipelineNodeId.empty() && !toNode.pipelineNodeId.empty()) {
+            pipeline_->disconnectNodes(fromNode.pipelineNodeId, toNode.pipelineNodeId);
+        }
+    }
     links_.erase(linkId);
 }
 

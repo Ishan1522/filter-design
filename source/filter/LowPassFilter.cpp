@@ -1,4 +1,4 @@
-#include "filter/LowPassFilter.h"
+#include "filter/LowPassFilter.hpp"
 #include <cmath>
 
 #ifndef M_PI

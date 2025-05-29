@@ -22,6 +22,11 @@ set(IMNODES_STANDALONE_PROJECT OFF)
 set(IMNODES_IMGUI_TARGET_NAME imgui)
 add_subdirectory(imnodes)
 
+# Configure ImPlot
+set(IMPLOT_STANDALONE_PROJECT OFF)
+set(IMPLOT_IMGUI_TARGET_NAME imgui)
+add_subdirectory(implot)
+
 # Add ImGui backend implementation files
 target_sources(imgui
     PRIVATE
@@ -37,17 +42,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Add source files
 set(SOURCES
     source/main.cpp
-    source/ui/FilterDesignUI.cpp
-    source/filter/LowPassFilter.cpp
-    source/pipeline/FilterPipeline.cpp
+        source/ui/FilterDesignUI.cpp
+        source/filter/LowPassFilter.cpp
+        source/pipeline/FilterPipeline.cpp
 )
 
 # Add header files
 set(HEADERS
-    include/filter/Filter.h
-    include/filter/LowPassFilter.h
-    include/ui/FilterDesignUI.h
-    include/pipeline/FilterPipeline.h
+        include/filter/Filter.hpp
+        include/filter/LowPassFilter.hpp
+        include/ui/FilterDesignUI.hpp
+        include/pipeline/FilterPipeline.hpp
 )
 
 # Create executable
@@ -60,6 +65,7 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends
         ${CMAKE_CURRENT_SOURCE_DIR}/imnodes
+        ${CMAKE_CURRENT_SOURCE_DIR}/implot
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${OPENGL_INCLUDE_DIR}
         ${vcpkg_installed_DIR}/x64-windows/include
@@ -80,10 +86,17 @@ target_include_directories(imnodes
         ${CMAKE_CURRENT_SOURCE_DIR}/imnodes
 )
 
+# Add include directories for ImPlot
+target_include_directories(implot
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/implot
+)
+
 # Link libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
     imgui
     imnodes
+    implot
     ${OPENGL_LIBRARIES}
     glfw
     glad::glad
@@ -92,6 +105,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 target_link_libraries(imgui
     PUBLIC
         glfw
+)
+
+# Link ImPlot with ImGui
+target_link_libraries(implot
+    PUBLIC
+        imgui
 )
 
 # Set output directories

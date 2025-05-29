@@ -1,4 +1,4 @@
-#include "../include/LogLoader.h"
+#include "../include/LogLoader.hpp"
 #include <iostream>
 #include <fstream>
 #include <wpigui/DataLogReader.h>

@@ -4,7 +4,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include "../include/ui/FilterDesignUI.h"
+#include "../include/ui/FilterDesignUI.hpp"
 
 void main() {
     // Create and initialize the UI

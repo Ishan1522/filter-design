@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FilterBase.h"
+#include "FilterBase.hpp"
 #include <vector>
 #include <complex>
 

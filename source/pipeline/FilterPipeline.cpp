@@ -1,4 +1,4 @@
-#include "../../include/pipeline/FilterPipeline.h"
+#include "../../include/pipeline/FilterPipeline.hpp"
 #include <algorithm>
 #include <sstream>
 #include <iomanip>

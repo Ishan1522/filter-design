@@ -11,7 +11,7 @@
 
 #include "imgui.h"
 #include "imnodes.h"
-#include "../pipeline/FilterPipeline.h"
+#include "../pipeline/FilterPipeline.hpp"
 
 namespace ui {
 

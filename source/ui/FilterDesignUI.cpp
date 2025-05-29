@@ -1,10 +1,11 @@
-#include "../../include/ui/FilterDesignUI.h"
+#include "../../include/ui/FilterDesignUI.hpp"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imnodes.h"
+#include "implot.h"
 #include <cmath>
 #include <sstream>
 #include <fstream>
@@ -60,6 +61,7 @@ bool FilterDesignUI::initializeImGui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImNodes::CreateContext();
+    ImPlot::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -80,6 +82,7 @@ void FilterDesignUI::cleanup() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImNodes::DestroyContext();
+    ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
     if (window_) {
@@ -285,16 +288,45 @@ void FilterDesignUI::renderPoleZeroPlot(int nodeId) {
     
     ImGui::Separator();
     if (ImGui::CollapsingHeader("Pole-Zero Plot")) {
-        // TODO: Use ImPlot to show pole-zero plot
-        // For now, just show poles and zeros
-        ImGui::Text("Poles:");
-        for (const auto& pole : node.poles) {
-            ImGui::Text("(%.3f, %.3f)", pole.real(), pole.imag());
-        }
-        
-        ImGui::Text("Zeros:");
-        for (const auto& zero : node.zeros) {
-            ImGui::Text("(%.3f, %.3f)", zero.real(), zero.imag());
+        if (ImPlot::BeginPlot("Pole-Zero Plot", ImVec2(-1, 300))) {
+            // Set up the plot
+            ImPlot::SetupAxes("Real", "Imaginary", ImPlotAxisFlags_AutoFit);
+            ImPlot::SetupAxisLimits(ImAxis_X1, -1.5, 1.5);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, -1.5, 1.5);
+            
+            // Draw unit circle
+            const int numPoints = 100;
+            std::vector<float> circleX(numPoints), circleY(numPoints);
+            for (int i = 0; i < numPoints; ++i) {
+                float angle = 2.0f * M_PI * i / (numPoints - 1);
+                circleX[i] = std::cos(angle);
+                circleY[i] = std::sin(angle);
+            }
+            ImPlot::PlotLine("Unit Circle", circleX.data(), circleY.data(), numPoints);
+            
+            // Plot poles
+            std::vector<float> poleX, poleY;
+            for (const auto& pole : node.poles) {
+                poleX.push_back(static_cast<float>(pole.real()));
+                poleY.push_back(static_cast<float>(pole.imag()));
+            }
+            if (!poleX.empty()) {
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 8, ImVec4(1,0,0,1), 2.0f);
+                ImPlot::PlotScatter("Poles", poleX.data(), poleY.data(), poleX.size());
+            }
+            
+            // Plot zeros
+            std::vector<float> zeroX, zeroY;
+            for (const auto& zero : node.zeros) {
+                zeroX.push_back(static_cast<float>(zero.real()));
+                zeroY.push_back(static_cast<float>(zero.imag()));
+            }
+            if (!zeroX.empty()) {
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 8, ImVec4(0,0,1,1), 2.0f, ImVec4(1,1,1,1));
+                ImPlot::PlotScatter("Zeros", zeroX.data(), zeroY.data(), zeroX.size());
+            }
+            
+            ImPlot::EndPlot();
         }
     }
 }
@@ -362,8 +394,6 @@ void FilterDesignUI::updatePipelineNode(Node& node) const {
             params["ripple"] = node.ripple;
             break;
         case Node::FilterType::Notch:
-            params["bandwidth"] = node.bandwidth;
-            break;
         case Node::FilterType::BandPass:
             params["bandwidth"] = node.bandwidth;
             break;

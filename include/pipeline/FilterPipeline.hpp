@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../filter/FilterBase.h"
+#include "../filter/FilterBase.hpp"
 #include <vector>
 #include <memory>
 #include <string>

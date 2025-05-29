@@ -241,6 +241,10 @@ void FilterDesignUI::renderFilterParameters(int nodeId) {
             }
             break;
         case Node::FilterType::Notch:
+        if (ImGui::DragFloat("Frequency (Hz)", &node.ui_bandwidth, 1.0f, 1.0f, 10000.0f)) {
+            node.bandwidth = static_cast<double>(node.ui_bandwidth);
+            calculateFilterCoefficients(node);
+        } break;
         case Node::FilterType::BandPass:
             if (ImGui::DragFloat("Bandwidth (Hz)", &node.ui_bandwidth, 1.0f, 1.0f, 10000.0f)) {
                 node.bandwidth = static_cast<double>(node.ui_bandwidth);
@@ -344,7 +348,7 @@ void FilterDesignUI::processFilters() {
     }
 }
 
-void FilterDesignUI::updatePipelineNode(Node& node) {
+void FilterDesignUI::updatePipelineNode(Node& node) const {
     std::map<std::string, double> params;
     
     // Add common parameters
@@ -358,6 +362,8 @@ void FilterDesignUI::updatePipelineNode(Node& node) {
             params["ripple"] = node.ripple;
             break;
         case Node::FilterType::Notch:
+            params["bandwidth"] = node.bandwidth;
+            break;
         case Node::FilterType::BandPass:
             params["bandwidth"] = node.bandwidth;
             break;
@@ -516,6 +522,7 @@ void FilterDesignUI::calculateFrequencyResponse(Node& node) {
 
 void FilterDesignUI::calculatePoleZero(Node& node) {
     // TODO: Implement pole-zero calculation
+    // node.zeros.clear();
 }
 
 std::string FilterDesignUI::generateLinearFilterCode(const Node& node) {

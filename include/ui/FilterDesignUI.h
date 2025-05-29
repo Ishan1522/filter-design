@@ -131,7 +131,7 @@ private:
     void createNode(NodeType type);
     void deleteNode(int nodeId);
     void deleteLink(int linkId);
-    void updatePipelineNode(Node& node);
+    void updatePipelineNode(Node& node) const;
     void updatePipelineConnections();
 };
 

@@ -265,21 +265,36 @@ void FilterDesignUI::renderFrequencyResponse(int nodeId) {
     ImGui::Separator();
     if (ImGui::CollapsingHeader("Frequency Response")) {
         // TODO: Use ImPlot to show frequency response
-        // For now, just show coefficients
-        ImGui::Text("Coefficients:");
-        ImGui::Text("b = [");
-        for (size_t i = 0; i < node.b.size(); ++i) {
-            ImGui::SameLine();
-            ImGui::Text("%.6f%s", node.b[i], i < node.b.size() - 1 ? ", " : "");
+        if (ImPlot::BeginPlot("Frequency Response Plot", ImVec2(-1, 300))) {
+            // Set up the plot
+            ImPlot::SetupAxes("Frequency (Hz)", "Magnitude (dB)", ImPlotAxisFlags_AutoFit);
+            ImPlot::SetupAxisLimits(ImAxis_X1, -1.5, 1.5);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, -1.5, 1.5);
+
+            // Plot poles
+            std::vector<float> poleX, poleY;
+            for (const auto& pole : node.poles) {
+                poleX.push_back(static_cast<float>(pole.real()));
+                poleY.push_back(static_cast<float>(pole.imag()));
+            }
+            if (!poleX.empty()) {
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 8, ImVec4(1,0,0,1), 2.0f);
+                ImPlot::PlotScatter("Poles", poleX.data(), poleY.data(), poleX.size());
+            }
+
+            // Plot zeros
+            std::vector<float> zeroX, zeroY;
+            for (const auto& zero : node.zeros) {
+                zeroX.push_back(static_cast<float>(zero.real()));
+                zeroY.push_back(static_cast<float>(zero.imag()));
+            }
+            if (!zeroX.empty()) {
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 8, ImVec4(0,0,1,1), 2.0f, ImVec4(1,1,1,1));
+                ImPlot::PlotScatter("Zeros", zeroX.data(), zeroY.data(), zeroX.size());
+            }
+
+            ImPlot::EndPlot();
         }
-        ImGui::Text("]");
-        
-        ImGui::Text("a = [");
-        for (size_t i = 0; i < node.a.size(); ++i) {
-            ImGui::SameLine();
-            ImGui::Text("%.6f%s", node.a[i], i < node.a.size() - 1 ? ", " : "");
-        }
-        ImGui::Text("]");
     }
 }
 

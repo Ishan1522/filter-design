@@ -1,17 +1,22 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include <string>
-#include <unordered_map>
+#include <vector>
+#include <map>
 #include <complex>
-
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#include "imgui.h"
-#include "imnodes.h"
+#include "../../imgui/imgui.h"
+#include "../../imgui/backends/imgui_impl_glfw.h"
+#include "../../imgui/backends/imgui_impl_opengl3.h"
+#include "../../imnodes/imnodes.h"
+#include "../../implot/implot.h"
+#include "../filter/Filter.hpp"
 #include "../pipeline/FilterPipeline.hpp"
+
+namespace pipeline {
+    class FilterPipeline;
+}
 
 namespace ui {
 
@@ -24,65 +29,43 @@ public:
     void run();
 
 private:
-    // Window management
-    GLFWwindow* window_ = nullptr;
-    bool initializeGLFW();
-    bool initializeImGui();
-    void cleanup();
 
-    // Node editor state
-    void renderNodeEditor();
-    void renderNodeMenu();
-    void renderNode(int nodeId, const std::string& title);
-    void renderLink(int linkId, int fromNode, int fromPin, int toNode, int toPin);
-    void renderFilterParameters(int nodeId);
-    void renderFrequencyResponse(int nodeId);
-    void renderPoleZeroPlot(int nodeId);
-    void renderCodeExport(int nodeId);
-
-    // Node data
     struct Node {
-        int id;
-        std::string title;
-        std::vector<int> inputPins;
-        std::vector<int> outputPins;
-        std::string pipelineNodeId;  // ID in the FilterPipeline
-        
-        // Filter parameters
         enum class FilterType {
             None,
-            Input,
-            Output,
             Butterworth,
             Chebyshev,
             Notch,
             BandPass
-        } filterType = FilterType::None;
+        };
+
+        int id;
+        std::string title;
+        FilterType filterType = FilterType::None;
+        std::vector<int> inputPins;
+        std::vector<int> outputPins;
+        std::string pipelineNodeId;
         
-        // Filter coefficients
+        // Filter parameters
+        int order = 2;
+        double cutoffFreq = 1000.0;
+        double sampleRate = 44100.0;
+        double ripple = 1.0;
+        double bandwidth = 100.0;
+        
+        // UI parameters
+        float ui_cutoffFreq = static_cast<float>(cutoffFreq);
+        float ui_sampleRate = static_cast<float>(sampleRate);
+        float ui_ripple = static_cast<float>(ripple);
+        float ui_bandwidth = static_cast<float>(bandwidth);
+        
+        // Filter coefficients and state
         std::vector<double> b;  // Numerator coefficients
         std::vector<double> a;  // Denominator coefficients
         std::vector<std::complex<double>> poles;
         std::vector<std::complex<double>> zeros;
-        
-        // Filter parameters (double for calculations)
-        int order = 2;
-        double cutoffFreq = 1000.0;
-        double sampleRate = 44100.0;
-        double ripple = 1.0;  // For Chebyshev
-        double bandwidth = 100.0;  // For bandpass/notch
-        
-        // UI parameters (float for ImGui controls)
-        float ui_cutoffFreq = 1000.0f;
-        float ui_sampleRate = 44100.0f;
-        float ui_ripple = 1.0f;
-        float ui_bandwidth = 100.0f;
-        
-        // State variables for processing
-        std::vector<double> xHistory;
-        std::vector<double> yHistory;
-        
-        // Input/output data
+        std::vector<double> xHistory;  // Input history
+        std::vector<double> yHistory;  // Output history
         std::vector<double> inputData;
         std::vector<double> outputData;
     };
@@ -95,15 +78,6 @@ private:
         int toPin;
     };
 
-    std::unordered_map<int, Node> nodes_;
-    std::unordered_map<int, Link> links_;
-    int nextNodeId_ = 1;
-    int nextLinkId_ = 1;
-
-    // Filter pipeline
-    std::unique_ptr<pipeline::FilterPipeline> pipeline_;
-
-    // Node types
     enum class NodeType {
         Input,
         Output,
@@ -113,26 +87,40 @@ private:
         BandPass
     };
 
-    // Filter processing
+    bool initGLFW();
+    bool initImGui();
+    void cleanup();
+    void renderMenu();
+    void renderNodeEditor();
+    void renderNodeMenu();
+    void renderNode(int nodeId, const std::string& title);
+    void renderFilterParameters(int nodeId);
+    void renderFrequencyResponse(int nodeId);
+    void renderPoleZeroPlot(int nodeId);
+    void renderCodeExport(int nodeId);
     void processFilters();
+    void updatePipelineNode(Node& node) const;
+    void updatePipelineConnections();
     void calculateFilterCoefficients(Node& node);
     double processSample(Node& node, double input);
     std::vector<double> processBlock(Node& node, const std::vector<double>& input);
-    
-    // Frequency analysis
     void calculateFrequencyResponse(Node& node);
     void calculatePoleZero(Node& node);
-    
-    // Code generation
     std::string generateLinearFilterCode(const Node& node);
     void exportToClipboard(const std::string& code);
     void exportToFile(const std::string& code, const std::string& filename);
-
     void createNode(NodeType type);
     void deleteNode(int nodeId);
     void deleteLink(int linkId);
-    void updatePipelineNode(Node& node) const;
-    void updatePipelineConnections();
+    void renderLink(int linkId, int fromNode, int fromPin, int toNode, int toPin);
+
+
+    GLFWwindow* window_ = nullptr;
+    std::map<int, Node> nodes_;
+    std::map<int, Link> links_;
+    int nextNodeId_ = 1;
+    int nextLinkId_ = 1;
+    std::unique_ptr<pipeline::FilterPipeline> pipeline_;
 };
 
 } // namespace ui 

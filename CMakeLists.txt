@@ -67,6 +67,7 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/imnodes
         ${CMAKE_CURRENT_SOURCE_DIR}/implot
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/filter
         ${OPENGL_INCLUDE_DIR}
         ${vcpkg_installed_DIR}/x64-windows/include
 )
@@ -84,12 +85,14 @@ target_include_directories(imgui
 target_include_directories(imnodes
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/imnodes
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui
 )
 
 # Add include directories for ImPlot
 target_include_directories(implot
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/implot
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui
 )
 
 # Link libraries

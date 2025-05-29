@@ -1,4 +1,5 @@
 #include "../../include/pipeline/FilterPipeline.hpp"
+#include "../../include/filter/Filter.hpp"
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
@@ -6,9 +7,6 @@
 #include <unordered_set>
 
 namespace pipeline {
-
-FilterPipeline::FilterPipeline() = default;
-FilterPipeline::~FilterPipeline() = default;
 
 std::string FilterPipeline::addNode(const std::string& type, const std::map<std::string, double>& params) {
     PipelineNode node;
@@ -195,7 +193,7 @@ std::string FilterPipeline::generateCode() const {
     return ss.str();
 }
 
-std::vector<PipelineNode> FilterPipeline::getPipelineNodes() const {
+std::vector<FilterPipeline::PipelineNode> FilterPipeline::getPipelineNodes() const {
     return nodes_;
 }
 

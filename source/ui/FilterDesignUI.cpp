@@ -9,12 +9,16 @@
 #include <cmath>
 #include <sstream>
 #include <fstream>
+#include "pipeline/FilterPipeline.hpp"
+#include "filter/Filter.hpp"
+#include "filter/ButterworthFilter.hpp"
+#include <stdexcept>
 
 #define M_PI 3.14159265358979323846
 
 namespace ui {
 
-FilterDesignUI::FilterDesignUI() {
+FilterDesignUI::FilterDesignUI() : nextNodeId_(1), nextLinkId_(1) {
     pipeline_ = std::make_unique<pipeline::FilterPipeline>();
 }
 
@@ -22,17 +26,7 @@ FilterDesignUI::~FilterDesignUI() {
     cleanup();
 }
 
-bool FilterDesignUI::initialize() {
-    if (!initializeGLFW()) {
-        return false;
-    }
-    if (!initializeImGui()) {
-        return false;
-    }
-    return true;
-}
-
-bool FilterDesignUI::initializeGLFW() {
+bool FilterDesignUI::initGLFW() {
     if (!glfwInit()) {
         return false;
     }
@@ -57,7 +51,7 @@ bool FilterDesignUI::initializeGLFW() {
     return true;
 }
 
-bool FilterDesignUI::initializeImGui() {
+bool FilterDesignUI::initImGui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImNodes::CreateContext();
@@ -65,6 +59,7 @@ bool FilterDesignUI::initializeImGui() {
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
 
     ImGui::StyleColorsDark();
 
@@ -100,6 +95,7 @@ void FilterDesignUI::run() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        renderMenu();
         renderNodeEditor();
 
         ImGui::Render();
@@ -111,6 +107,30 @@ void FilterDesignUI::run() {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window_);
+    }
+}
+
+void FilterDesignUI::renderMenu() {
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("New")) {
+                // TODO: Implement new pipeline
+            }
+            if (ImGui::MenuItem("Open")) {
+                // TODO: Implement open pipeline
+            }
+            if (ImGui::MenuItem("Save")) {
+                // TODO: Implement save pipeline
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::MenuItem("Add Node")) {
+                // TODO: Show node creation dialog
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
     }
 }
 
@@ -164,12 +184,12 @@ void FilterDesignUI::renderNodeEditor() {
 void FilterDesignUI::renderNodeMenu() {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Add Node")) {
-            if (ImGui::MenuItem("Input")) createNode(NodeType::Input);
-            if (ImGui::MenuItem("Output")) createNode(NodeType::Output);
-            if (ImGui::MenuItem("Butterworth")) createNode(NodeType::Butterworth);
-            if (ImGui::MenuItem("Chebyshev")) createNode(NodeType::Chebyshev);
-            if (ImGui::MenuItem("Notch")) createNode(NodeType::Notch);
-            if (ImGui::MenuItem("Band Pass")) createNode(NodeType::BandPass);
+            if (ImGui::MenuItem("Input")) createNode(FilterDesignUI::NodeType::Input);
+            if (ImGui::MenuItem("Output")) createNode(FilterDesignUI::NodeType::Output);
+            if (ImGui::MenuItem("Butterworth")) createNode(FilterDesignUI::NodeType::Butterworth);
+            if (ImGui::MenuItem("Chebyshev")) createNode(FilterDesignUI::NodeType::Chebyshev);
+            if (ImGui::MenuItem("Notch")) createNode(FilterDesignUI::NodeType::Notch);
+            if (ImGui::MenuItem("Band Pass")) createNode(FilterDesignUI::NodeType::BandPass);
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -264,7 +284,6 @@ void FilterDesignUI::renderFrequencyResponse(int nodeId) {
     
     ImGui::Separator();
     if (ImGui::CollapsingHeader("Frequency Response")) {
-        // TODO: Use ImPlot to show frequency response
         if (ImPlot::BeginPlot("Frequency Response Plot", ImVec2(-1, 300))) {
             // Set up the plot
             ImPlot::SetupAxes("Frequency (Hz)", "Magnitude (dB)", ImPlotAxisFlags_AutoFit);
@@ -379,7 +398,7 @@ void FilterDesignUI::processFilters() {
 
     // Process data through the pipeline
     for (auto& [id, node] : nodes_) {
-        if (node.filterType == Node::FilterType::Input) {
+        if (node.filterType == Node::FilterType::None) {
             // For input nodes, process through the pipeline
             if (!node.inputData.empty()) {
                 node.outputData = pipeline_->processData(node.inputData);
@@ -542,25 +561,6 @@ double FilterDesignUI::processSample(Node& node, double input) {
     return y;
 }
 
-std::vector<double> FilterDesignUI::processBlock(Node& node, const std::vector<double>& input) {
-    std::vector<double> output;
-    output.reserve(input.size());
-    
-    // Initialize state if needed
-    if (node.xHistory.size() != node.b.size()) {
-        node.xHistory.resize(node.b.size(), 0.0);
-    }
-    if (node.yHistory.size() != node.a.size()) {
-        node.yHistory.resize(node.a.size(), 0.0);
-    }
-    
-    for (double sample : input) {
-        output.push_back(processSample(node, sample));
-    }
-    
-    return output;
-}
-
 void FilterDesignUI::calculateFrequencyResponse(Node& node) {
     // TODO: Implement frequency response calculation
 }
@@ -694,6 +694,16 @@ void FilterDesignUI::deleteLink(int linkId) {
 
 void FilterDesignUI::renderLink(int linkId, int fromNode, int fromPin, int toNode, int toPin) {
     ImNodes::Link(linkId, fromPin, toPin);
+}
+
+bool FilterDesignUI::initialize() {
+    if (!initGLFW()) {
+        return false;
+    }
+    if (!initImGui()) {
+        return false;
+    }
+    return true;
 }
 
 } // namespace ui 

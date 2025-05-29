@@ -1,97 +1,51 @@
-#include "filter/ButterworthFilter.h"
+#include "../../include/filter/ButterworthFilter.hpp"
 #include <cmath>
-#include <complex>
 #include <algorithm>
+
+#define M_PI 3.14159265358979323846
 
 namespace filter {
 
 ButterworthFilter::ButterworthFilter(int order, double cutoffFreq, double sampleRate)
-    : order_(order), cutoffFreq_(cutoffFreq), sampleRate_(sampleRate) {
+    : order_(order)
+    , cutoffFreq_(cutoffFreq)
+    , sampleRate_(sampleRate)
+{
     calculateCoefficients();
 }
 
-void ButterworthFilter::calculateCoefficients() {
-    // Calculate normalized cutoff frequency
-    double wc = 2.0 * M_PI * cutoffFreq_ / sampleRate_;
-    
-    // Calculate poles
-    poles_.clear();
-    for (int k = 0; k < order_; ++k) {
-        double angle = M_PI * (2.0 * k + 1) / (2.0 * order_);
-        std::complex<double> pole = std::exp(std::complex<double>(0, angle));
-        poles_.push_back(wc * pole);
-    }
-    
-    // Calculate coefficients for direct form II
-    calculateDirectFormIICoefficients();
-}
-
-void ButterworthFilter::calculateDirectFormIICoefficients() {
-    // Convert poles to direct form II coefficients
-    // This is a simplified version - in practice, you'd want to use
-    // a more robust method to handle numerical stability
-    a_.resize(order_ + 1);
-    b_.resize(order_ + 1);
-    
-    // Initialize coefficients
-    std::fill(a_.begin(), a_.end(), 0.0);
-    std::fill(b_.begin(), b_.end(), 0.0);
-    
-    // Calculate coefficients from poles
-    // This is a simplified version - in practice, you'd want to use
-    // a more robust method to handle numerical stability
-    a_[0] = 1.0;
-    for (size_t i = 0; i < poles_.size(); ++i) {
-        a_[i + 1] = -std::real(poles_[i]);
-    }
-    
-    // Normalize coefficients
-    double gain = 1.0;
-    for (size_t i = 0; i < poles_.size(); ++i) {
-        gain *= std::abs(poles_[i]);
-    }
-    for (double& b : b_) {
-        b /= gain;
-    }
-}
-
-double ButterworthFilter::process(double input) {
+double ButterworthFilter::processSample(double input) {
     // Direct form II implementation
     double w = input;
     for (size_t i = 1; i < a_.size(); ++i) {
-        w -= a_[i] * w_[i - 1];
+        w -= a_[i] * yHistory_[i - 1];
     }
     
     double y = 0.0;
     for (size_t i = 0; i < b_.size(); ++i) {
-        y += b_[i] * w_[i];
+        y += b_[i] * xHistory_[i];
     }
     
     // Update state
-    for (size_t i = w_.size() - 1; i > 0; --i) {
-        w_[i] = w_[i - 1];
+    for (size_t i = xHistory_.size() - 1; i > 0; --i) {
+        xHistory_[i] = xHistory_[i - 1];
     }
-    w_[0] = w;
+    xHistory_[0] = w;
+    
+    for (size_t i = yHistory_.size() - 1; i > 0; --i) {
+        yHistory_[i] = yHistory_[i - 1];
+    }
+    yHistory_[0] = y;
     
     return y;
 }
 
-std::vector<double> ButterworthFilter::processBlock(const std::vector<double>& input) {
-    std::vector<double> output;
-    output.reserve(input.size());
-    
-    for (double sample : input) {
-        output.push_back(process(sample));
-    }
-    
-    return output;
+std::vector<double> ButterworthFilter::getNumeratorCoefficients() const {
+    return b_;
 }
 
-std::vector<double> ButterworthFilter::getCoefficients() const {
-    std::vector<double> coeffs;
-    coeffs.insert(coeffs.end(), a_.begin(), a_.end());
-    coeffs.insert(coeffs.end(), b_.begin(), b_.end());
-    return coeffs;
+std::vector<double> ButterworthFilter::getDenominatorCoefficients() const {
+    return a_;
 }
 
 std::vector<std::complex<double>> ButterworthFilter::getPoles() const {
@@ -99,8 +53,7 @@ std::vector<std::complex<double>> ButterworthFilter::getPoles() const {
 }
 
 std::vector<std::complex<double>> ButterworthFilter::getZeros() const {
-    // Butterworth filters have all zeros at infinity
-    return std::vector<std::complex<double>>();
+    return zeros_;
 }
 
 std::vector<std::complex<double>> ButterworthFilter::getFrequencyResponse(
@@ -108,48 +61,84 @@ std::vector<std::complex<double>> ButterworthFilter::getFrequencyResponse(
     std::vector<std::complex<double>> response;
     response.reserve(frequencies.size());
     
-    for (double f : frequencies) {
-        std::complex<double> z = std::exp(std::complex<double>(0, 2.0 * M_PI * f / sampleRate_));
-        std::complex<double> H = 1.0;
-        
-        // Calculate frequency response from poles
-        for (const auto& pole : poles_) {
-            H /= (z - pole);
-        }
-        
-        response.push_back(H);
+    for (double freq : frequencies) {
+        std::complex<double> z = std::exp(std::complex<double>(0, 2.0 * M_PI * freq / sampleRate_));
+        response.push_back(evaluateTransferFunction(z));
     }
     
     return response;
 }
 
-std::string ButterworthFilter::getType() const {
+std::string ButterworthFilter::getTypeName() const {
     return "Butterworth";
 }
 
-std::vector<std::pair<std::string, double>> ButterworthFilter::getParameters() const {
-    return {
-        {"Order", static_cast<double>(order_)},
-        {"Cutoff Frequency", cutoffFreq_},
-        {"Sample Rate", sampleRate_}
-    };
-}
-
-void ButterworthFilter::setParameters(const std::vector<std::pair<std::string, double>>& params) {
-    for (const auto& [name, value] : params) {
-        if (name == "Order") {
-            order_ = static_cast<int>(value);
-        } else if (name == "Cutoff Frequency") {
-            cutoffFreq_ = value;
-        } else if (name == "Sample Rate") {
-            sampleRate_ = value;
-        }
+void ButterworthFilter::setParameter(const std::string& name, double value) {
+    if (name == "order") {
+        order_ = static_cast<int>(value);
+    } else if (name == "cutoffFreq") {
+        cutoffFreq_ = value;
+    } else if (name == "sampleRate") {
+        sampleRate_ = value;
     }
     calculateCoefficients();
 }
 
-void ButterworthFilter::reset() {
-    std::fill(w_.begin(), w_.end(), 0.0);
+double ButterworthFilter::getParameter(const std::string& name) const {
+    if (name == "order") {
+        return static_cast<double>(order_);
+    } else if (name == "cutoffFreq") {
+        return cutoffFreq_;
+    } else if (name == "sampleRate") {
+        return sampleRate_;
+    }
+    return 0.0;
+}
+
+void ButterworthFilter::calculateCoefficients() {
+    // Calculate normalized cutoff frequency
+    double wc = 2.0 * M_PI * cutoffFreq_ / sampleRate_;
+    
+    // Calculate poles
+    calculatePoles();
+    
+    // Convert poles to coefficients
+    a_.resize(order_ + 1);
+    b_.resize(order_ + 1);
+    std::fill(a_.begin(), a_.end(), 0.0);
+    std::fill(b_.begin(), b_.end(), 0.0);
+    
+    a_[0] = 1.0;
+    for (size_t i = 0; i < poles_.size(); ++i) {
+        a_[i + 1] = -std::real(poles_[i]);
+    }
+    
+    // Normalize coefficients
+    double gain = 1.0;
+    for (const auto& pole : poles_) {
+        gain *= std::abs(pole);
+    }
+    for (double& b : b_) {
+        b /= gain;
+    }
+    
+    // Initialize state history
+    xHistory_.resize(b_.size(), 0.0);
+    yHistory_.resize(a_.size(), 0.0);
+}
+
+void ButterworthFilter::calculatePoles() {
+    poles_.clear();
+    zeros_.clear();
+    
+    // Calculate poles for Butterworth filter
+    for (int k = 0; k < order_; ++k) {
+        double angle = M_PI * (2.0 * k + 1) / (2.0 * order_);
+        std::complex<double> pole = std::exp(std::complex<double>(0, angle));
+        poles_.push_back(pole);
+    }
+    
+    // Butterworth filters have no zeros
 }
 
 } // namespace filter 

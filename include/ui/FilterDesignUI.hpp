@@ -87,6 +87,10 @@ private:
         BandPass
     };
 
+    static int getNodeTypeValue(NodeType type) {
+        return static_cast<int>(type);
+    }
+
     bool initGLFW();
     bool initImGui();
     void cleanup();

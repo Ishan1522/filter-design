@@ -434,7 +434,8 @@ void FilterDesignUI::updatePipelineNode(Node& node) const {
         default:
             break;
     }
-    
+
+    // TODO: Make function for this
     // Convert node type to string
     std::string type;
     switch (node.filterType) {

@@ -1,5 +1,4 @@
 #include "data/WpiLogDataSource.h"
-#include <wpigui/DataLogReader.h>
 #include <fstream>
 #include <chrono>
 

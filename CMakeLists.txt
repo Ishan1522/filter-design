@@ -42,17 +42,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Add source files
 set(SOURCES
     source/main.cpp
-        source/ui/FilterDesignUI.cpp
-        source/filter/LowPassFilter.cpp
-        source/pipeline/FilterPipeline.cpp
+    source/ui/FilterDesignUI.cpp
+    source/filter/LowPassFilter.cpp
+    source/pipeline/FilterPipeline.cpp
+    source/filter/InputNodes.cpp
 )
 
 # Add header files
 set(HEADERS
-        include/filter/Filter.hpp
-        include/filter/LowPassFilter.hpp
-        include/ui/FilterDesignUI.hpp
-        include/pipeline/FilterPipeline.hpp
+    include/filter/Filter.hpp
+    include/filter/LowPassFilter.hpp
+    include/ui/FilterDesignUI.hpp
+    include/pipeline/FilterPipeline.hpp
+    include/filter/InputNodes.hpp
 )
 
 # Create executable
@@ -130,3 +132,29 @@ if(WIN32)
         GLFW_INCLUDE_NONE
     )
 endif()
+
+# Enable filesystem support
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /std:c++17)
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
+endif()
+
+# Copy dependencies to build directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/imgui
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/imnodes
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/imnodes
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/implot
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/implot
+)

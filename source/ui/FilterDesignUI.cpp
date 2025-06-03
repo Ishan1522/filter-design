@@ -145,7 +145,7 @@ void FilterDesignUI::renderNodeEditor() {
 
     // Create a default node if none exist
     if (nodes_.empty()) {
-        createNode(NodeType::Butterworth);
+        createNode(Node::NodeType::Butterworth);
     }
 
     ImNodes::BeginNodeEditor();
@@ -184,12 +184,16 @@ void FilterDesignUI::renderNodeEditor() {
 void FilterDesignUI::renderNodeMenu() {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Add Node")) {
-            if (ImGui::MenuItem("Input")) createNode(FilterDesignUI::NodeType::Input);
-            if (ImGui::MenuItem("Output")) createNode(FilterDesignUI::NodeType::Output);
-            if (ImGui::MenuItem("Butterworth")) createNode(FilterDesignUI::NodeType::Butterworth);
-            if (ImGui::MenuItem("Chebyshev")) createNode(FilterDesignUI::NodeType::Chebyshev);
-            if (ImGui::MenuItem("Notch")) createNode(FilterDesignUI::NodeType::Notch);
-            if (ImGui::MenuItem("Band Pass")) createNode(FilterDesignUI::NodeType::BandPass);
+            if (ImGui::BeginMenu("Input")) {
+                if (ImGui::MenuItem("Log File")) createNode(Node::NodeType::LogFileInput);
+                if (ImGui::MenuItem("Network Table")) createNode(Node::NodeType::NetworkTableInput);
+                ImGui::EndMenu();
+            }
+            if (ImGui::MenuItem("Output")) createNode(Node::NodeType::Output);
+            if (ImGui::MenuItem("Butterworth")) createNode(Node::NodeType::Butterworth);
+            if (ImGui::MenuItem("Chebyshev")) createNode(Node::NodeType::Chebyshev);
+            if (ImGui::MenuItem("Notch")) createNode(Node::NodeType::Notch);
+            if (ImGui::MenuItem("Band Pass")) createNode(Node::NodeType::BandPass);
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -212,11 +216,15 @@ void FilterDesignUI::renderNode(int nodeId, const std::string& title) {
         ImNodes::EndInputAttribute();
     }
 
-    // Render filter parameters
-    renderFilterParameters(nodeId);
+    // Render input parameters for input nodes
+    if (node.nodeType == Node::NodeType::LogFileInput || 
+        node.nodeType == Node::NodeType::NetworkTableInput) {
+        renderInputParameters(nodeId);
+    }
 
-    // Render frequency response if it's a filter node
+    // Render filter parameters for filter nodes
     if (node.filterType != Node::FilterType::None) {
+        renderFilterParameters(nodeId);
         renderFrequencyResponse(nodeId);
         renderPoleZeroPlot(nodeId);
         renderCodeExport(nodeId);
@@ -389,6 +397,171 @@ void FilterDesignUI::renderCodeExport(int nodeId) {
     }
 }
 
+bool FilterDesignUI::openFileDialog(std::string& outPath) {
+    static char filename[256] = "";
+    static bool showDialog = true;
+    
+    if (showDialog) {
+        ImGui::OpenPopup("Select File");
+        showDialog = false;
+    }
+    
+    if (ImGui::BeginPopupModal("Select File", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::InputText("Filename", filename, sizeof(filename));
+        
+        if (ImGui::Button("OK", ImVec2(120, 0))) {
+            outPath = filename;
+            ImGui::CloseCurrentPopup();
+            showDialog = true;
+            return true;
+        }
+        
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            showDialog = true;
+            return false;
+        }
+        
+        ImGui::EndPopup();
+    }
+    
+    return false;
+}
+
+void FilterDesignUI::renderInputParameters(int nodeId) {
+    auto& node = nodes_[nodeId];
+    
+    ImGui::Separator();
+    ImGui::Text("Input Parameters");
+
+    if (node.nodeType == Node::NodeType::LogFileInput) {
+        char filename[256] = {0};
+        strncpy(filename, node.logFilename.c_str(), sizeof(filename) - 1);
+        if (ImGui::InputText("Log File", filename, sizeof(filename))) {
+            node.logFilename = filename;
+            if (!node.logFilename.empty()) {
+                node.inputNode = std::make_unique<filter::LogFileInput>(node.logFilename, node.logColumnName);
+                node.inputNode->start();
+            }
+        }
+
+        char column[256] = {0};
+        strncpy(column, node.logColumnName.c_str(), sizeof(column) - 1);
+        if (ImGui::InputText("Column Name", column, sizeof(column))) {
+            node.logColumnName = column;
+            if (!node.logFilename.empty() && !node.logColumnName.empty()) {
+                node.inputNode = std::make_unique<filter::LogFileInput>(node.logFilename, node.logColumnName);
+                node.inputNode->start();
+            }
+        }
+
+        if (ImGui::Button("Browse...")) {
+            std::string selectedPath;
+            if (openFileDialog(selectedPath)) {
+                node.logFilename = selectedPath;
+                if (!node.logFilename.empty() && !node.logColumnName.empty()) {
+                    node.inputNode = std::make_unique<filter::LogFileInput>(node.logFilename, node.logColumnName);
+                    node.inputNode->start();
+                }
+            }
+        }
+    }
+    else if (node.nodeType == Node::NodeType::NetworkTableInput) {
+        char table[256] = {0};
+        strncpy(table, node.networkTableName.c_str(), sizeof(table) - 1);
+        if (ImGui::InputText("Table Name", table, sizeof(table))) {
+            node.networkTableName = table;
+            if (!node.networkTableName.empty() && !node.networkTableKey.empty()) {
+                node.inputNode = std::make_unique<filter::NetworkTableInput>(node.networkTableName, node.networkTableKey);
+                node.inputNode->start();
+            }
+        }
+
+        char key[256] = {0};
+        strncpy(key, node.networkTableKey.c_str(), sizeof(key) - 1);
+        if (ImGui::InputText("Key", key, sizeof(key))) {
+            node.networkTableKey = key;
+            if (!node.networkTableName.empty() && !node.networkTableKey.empty()) {
+                node.inputNode = std::make_unique<filter::NetworkTableInput>(node.networkTableName, node.networkTableKey);
+                node.inputNode->start();
+            }
+        }
+
+        // Connection settings
+        ImGui::Separator();
+        ImGui::Text("Connection Settings");
+
+        // Connection type selection
+        static int connectionType = 0;
+        if (ImGui::RadioButton("USB", &connectionType, 0)) {
+            if (node.inputNode) {
+                auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(node.inputNode.get());
+                if (ntInput) {
+                    ntInput->setUseUSB(true);
+                    ntInput->stop();
+                    ntInput->start();
+                }
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("IP Address", &connectionType, 1)) {
+            if (node.inputNode) {
+                auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(node.inputNode.get());
+                if (ntInput) {
+                    ntInput->setUseUSB(false);
+                    ntInput->stop();
+                    ntInput->start();
+                }
+            }
+        }
+
+        if (connectionType == 0) {
+            // USB connection - no additional settings needed
+        } else {
+            // IP Address connection
+            static int teamNumber = 0;
+            static char ipAddress[16] = "10.0.0.2";
+            
+            if (ImGui::CollapsingHeader("Team Number")) {
+                if (ImGui::InputInt("Team Number", &teamNumber)) {
+                    if (node.inputNode) {
+                        auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(node.inputNode.get());
+                        if (ntInput) {
+                            ntInput->setTeamNumber(teamNumber);
+                            ntInput->stop();
+                            ntInput->start();
+                        }
+                    }
+                }
+            }
+            
+            if (ImGui::CollapsingHeader("Custom IP")) {
+                char ipAddress[16] = {0};
+                if (!node.networkTableIP.empty()) {
+                    strncpy(ipAddress, node.networkTableIP.c_str(), sizeof(ipAddress) - 1);
+                }
+                if (ImGui::InputText("IP Address", ipAddress, sizeof(ipAddress))) {
+                    node.networkTableIP = ipAddress;
+                    if (node.inputNode) {
+                        auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(node.inputNode.get());
+                        if (ntInput) {
+                            ntInput->setIPAddress(node.networkTableIP);
+                            ntInput->stop();
+                            ntInput->start();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Show connection status
+    if (node.inputNode) {
+        ImGui::Text("Status: %s", node.inputNode->isConnected() ? "Connected" : "Disconnected");
+    }
+}
+
 void FilterDesignUI::processFilters() {
     // Update pipeline nodes and connections
     for (auto& [id, node] : nodes_) {
@@ -398,15 +571,19 @@ void FilterDesignUI::processFilters() {
 
     // Process data through the pipeline
     for (auto& [id, node] : nodes_) {
-        if (node.filterType == Node::FilterType::None) {
-            // For input nodes, process through the pipeline
-            if (!node.inputData.empty()) {
-                node.outputData = pipeline_->processData(node.inputData);
-                
-                // Propagate output to connected nodes
-                for (const auto& [linkId, link] : links_) {
-                    if (link.fromNode == id) {
-                        nodes_[link.toNode].inputData = node.outputData;
+        if (node.nodeType == Node::NodeType::LogFileInput || 
+            node.nodeType == Node::NodeType::NetworkTableInput) {
+            // Get data from input node
+            if (node.inputNode && node.inputNode->isConnected()) {
+                node.inputData = node.inputNode->getData();
+                if (!node.inputData.empty()) {
+                    node.outputData = pipeline_->processData(node.inputData);
+                    
+                    // Propagate output to connected nodes
+                    for (const auto& [linkId, link] : links_) {
+                        if (link.fromNode == id) {
+                            nodes_[link.toNode].inputData = node.outputData;
+                        }
                     }
                 }
             }
@@ -610,20 +787,25 @@ void FilterDesignUI::exportToFile(const std::string& code, const std::string& fi
     }
 }
 
-void FilterDesignUI::createNode(NodeType type) {
+void FilterDesignUI::createNode(Node::NodeType type) {
     Node node;
     node.id = nextNodeId_++;
+    node.nodeType = type;
     
     switch (type) {
-        case NodeType::Input:
-            node.title = "Input";
+        case Node::NodeType::LogFileInput:
+            node.title = "Log File Input";
             node.outputPins.push_back(nextNodeId_++);
             break;
-        case NodeType::Output:
+        case Node::NodeType::NetworkTableInput:
+            node.title = "Network Table Input";
+            node.outputPins.push_back(nextNodeId_++);
+            break;
+        case Node::NodeType::Output:
             node.title = "Output";
             node.inputPins.push_back(nextNodeId_++);
             break;
-        case NodeType::Butterworth:
+        case Node::NodeType::Butterworth:
             node.title = "Butterworth";
             node.filterType = Node::FilterType::Butterworth;
             node.inputPins.push_back(nextNodeId_++);
@@ -633,7 +815,7 @@ void FilterDesignUI::createNode(NodeType type) {
             node.ui_sampleRate = static_cast<float>(node.sampleRate);
             calculateFilterCoefficients(node);
             break;
-        case NodeType::Chebyshev:
+        case Node::NodeType::Chebyshev:
             node.title = "Chebyshev";
             node.filterType = Node::FilterType::Chebyshev;
             node.inputPins.push_back(nextNodeId_++);
@@ -644,7 +826,7 @@ void FilterDesignUI::createNode(NodeType type) {
             node.ui_ripple = static_cast<float>(node.ripple);
             calculateFilterCoefficients(node);
             break;
-        case NodeType::Notch:
+        case Node::NodeType::Notch:
             node.title = "Notch";
             node.filterType = Node::FilterType::Notch;
             node.inputPins.push_back(nextNodeId_++);
@@ -655,7 +837,7 @@ void FilterDesignUI::createNode(NodeType type) {
             node.ui_bandwidth = static_cast<float>(node.bandwidth);
             calculateFilterCoefficients(node);
             break;
-        case NodeType::BandPass:
+        case Node::NodeType::BandPass:
             node.title = "Band Pass";
             node.filterType = Node::FilterType::BandPass;
             node.inputPins.push_back(nextNodeId_++);
@@ -668,7 +850,7 @@ void FilterDesignUI::createNode(NodeType type) {
             break;
     }
 
-    nodes_[node.id] = node;
+    nodes_[node.id] = std::move(node);
     updatePipelineNode(nodes_[node.id]);
 }
 

@@ -10,14 +10,18 @@
 #include <queue>
 #include <functional>
 #include <filesystem>
+#include <portable-file-dialogs.h>
+#include <wpi/MemoryBuffer.h>
+#include <wpi/DataLogReader.h>
+#include <imgui.h>
 
 namespace filter {
 
 class InputNode {
 public:
     virtual ~InputNode() = default;
-    virtual std::vector<double> getData() = 0;
     virtual bool isConnected() const = 0;
+    virtual std::vector<double> getData() const = 0;
     virtual void start() = 0;
     virtual void stop() = 0;
 };
@@ -30,10 +34,10 @@ public:
     };
 
     LogFileInput(const std::string& filename, const std::string& columnName);
-    ~LogFileInput();
+    ~LogFileInput() override = default;
 
-    std::vector<double> getData() override;
     bool isConnected() const override;
+    std::vector<double> getData() const override;
     void start() override;
     void stop() override;
 
@@ -52,22 +56,23 @@ private:
     bool connected_;
     FileType fileType_;
     int columnIndex_;
+    std::unique_ptr<wpi::DataLogReader> reader_;
+    std::vector<double> data_;
 };
 
 class NetworkTableInput : public InputNode {
 public:
     NetworkTableInput(const std::string& tableName, const std::string& key);
-    ~NetworkTableInput();
+    ~NetworkTableInput() override = default;
 
-    std::vector<double> getData() override;
     bool isConnected() const override;
+    std::vector<double> getData() const override;
     void start() override;
     void stop() override;
 
-    // Connection settings
-    void setTeamNumber(int teamNumber) { teamNumber_ = teamNumber; }
-    void setUseUSB(bool useUSB) { useUSB_ = useUSB; }
-    void setIPAddress(const std::string& ipAddress) { ipAddress_ = ipAddress; }
+    void setUseUSB(bool useUSB);
+    void setTeamNumber(int teamNumber);
+    void setIPAddress(const std::string& ipAddress);
 
 private:
     void updateLoop();
@@ -87,6 +92,36 @@ private:
     int teamNumber_ = 0;
     bool useUSB_ = true;
     std::string ipAddress_;
+    std::vector<double> data_;
+};
+
+class LogLoader {
+public:
+    LogLoader();
+    ~LogLoader() = default;
+
+    void Display();
+    bool IsFileLoaded() const { return reader_ != nullptr; }
+    std::vector<double> GetData(const std::string& entryName) const;
+
+private:
+    void RebuildEntryTree();
+    void DisplayEntryTree(const std::vector<EntryTreeNode>& tree);
+    static void EmitEntry(const std::string& name, const wpi::DataLogReaderEntry& entry);
+
+    struct EntryTreeNode {
+        std::string name;
+        std::string path;
+        const wpi::DataLogReaderEntry* entry = nullptr;
+        std::vector<EntryTreeNode> children;
+    };
+
+    std::unique_ptr<pfd::open_file> opener_;
+    std::string filename_;
+    std::string error_;
+    std::unique_ptr<wpi::DataLogReader> reader_;
+    std::vector<EntryTreeNode> entryTree_;
+    std::string filter_;
 };
 
 } // namespace filter 

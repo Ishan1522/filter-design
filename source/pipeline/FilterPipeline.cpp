@@ -1,5 +1,6 @@
 #include "../../include/pipeline/FilterPipeline.hpp"
 #include "../../include/filter/Filter.hpp"
+#include "../../include/filter/InputNodes.hpp"
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
@@ -96,15 +97,29 @@ void FilterPipeline::setNodeParameters(const std::string& nodeId, const std::map
     }
 }
 
+void FilterPipeline::setInputNode(const std::string& nodeId, std::shared_ptr<filter::InputNode> inputNode) {
+    auto it = std::find_if(nodes_.begin(), nodes_.end(),
+        [&](const PipelineNode& node) { return node.id == nodeId; });
+    if (it != nodes_.end()) {
+        it->inputNode = inputNode;
+    }
+}
+
+std::shared_ptr<filter::InputNode> FilterPipeline::getInputNode(const std::string& nodeId) const {
+    auto it = std::find_if(nodes_.begin(), nodes_.end(),
+        [&](const PipelineNode& node) { return node.id == nodeId; });
+    return it != nodes_.end() ? it->inputNode : nullptr;
+}
+
 std::vector<double> FilterPipeline::processData(const std::vector<double>& input) {
     if (nodes_.empty()) {
         return input;
     }
 
-    // Find input nodes (nodes with no inputs)
+    // Find input nodes (nodes with input nodes or no inputs)
     std::vector<std::string> inputNodes;
     for (const auto& node : nodes_) {
-        if (node.inputIds.empty()) {
+        if (node.inputNode || node.inputIds.empty()) {
             inputNodes.push_back(node.id);
         }
     }
@@ -122,6 +137,12 @@ std::vector<double> FilterPipeline::processData(const std::vector<double>& input
         
         if (inputNodeIt == nodes_.end()) {
             continue;
+        }
+
+        // Get input data from input node if available
+        std::vector<double> nodeInput = input;
+        if (inputNodeIt->inputNode && inputNodeIt->inputNode->isConnected()) {
+            nodeInput = inputNodeIt->inputNode->getData();
         }
 
         // Process data through the pipeline starting from this input node
@@ -148,12 +169,21 @@ std::vector<double> FilterPipeline::processData(const std::vector<double>& input
 
             // Process data through the current node
             if (currentNodeIt->filter) {
-                output = currentNodeIt->filter->processBlock(output);
+                nodeInput = currentNodeIt->filter->processBlock(nodeInput);
             }
 
             // Add output nodes to the queue
             for (const auto& outputId : currentNodeIt->outputIds) {
                 nodeQueue.push(outputId);
+            }
+        }
+
+        // Combine outputs from different input nodes
+        if (output.size() != nodeInput.size()) {
+            output = nodeInput;
+        } else {
+            for (size_t i = 0; i < output.size(); ++i) {
+                output[i] += nodeInput[i];
             }
         }
     }

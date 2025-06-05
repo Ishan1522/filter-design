@@ -441,8 +441,9 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
         if (ImGui::InputText("Log File", filename, sizeof(filename))) {
             node.logFilename = filename;
             if (!node.logFilename.empty()) {
-                node.inputNode = std::make_unique<filter::LogFileInput>(node.logFilename, node.logColumnName);
-                node.inputNode->start();
+                auto inputNode = std::make_shared<filter::LogFileInput>(node.logFilename, node.logColumnName);
+                inputNode->start();
+                pipeline_->setInputNode(node.pipelineNodeId, inputNode);
             }
         }
 
@@ -451,8 +452,9 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
         if (ImGui::InputText("Column Name", column, sizeof(column))) {
             node.logColumnName = column;
             if (!node.logFilename.empty() && !node.logColumnName.empty()) {
-                node.inputNode = std::make_unique<filter::LogFileInput>(node.logFilename, node.logColumnName);
-                node.inputNode->start();
+                auto inputNode = std::make_shared<filter::LogFileInput>(node.logFilename, node.logColumnName);
+                inputNode->start();
+                pipeline_->setInputNode(node.pipelineNodeId, inputNode);
             }
         }
 
@@ -461,8 +463,9 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
             if (openFileDialog(selectedPath)) {
                 node.logFilename = selectedPath;
                 if (!node.logFilename.empty() && !node.logColumnName.empty()) {
-                    node.inputNode = std::make_unique<filter::LogFileInput>(node.logFilename, node.logColumnName);
-                    node.inputNode->start();
+                    auto inputNode = std::make_shared<filter::LogFileInput>(node.logFilename, node.logColumnName);
+                    inputNode->start();
+                    pipeline_->setInputNode(node.pipelineNodeId, inputNode);
                 }
             }
         }
@@ -473,8 +476,9 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
         if (ImGui::InputText("Table Name", table, sizeof(table))) {
             node.networkTableName = table;
             if (!node.networkTableName.empty() && !node.networkTableKey.empty()) {
-                node.inputNode = std::make_unique<filter::NetworkTableInput>(node.networkTableName, node.networkTableKey);
-                node.inputNode->start();
+                auto inputNode = std::make_shared<filter::NetworkTableInput>(node.networkTableName, node.networkTableKey);
+                inputNode->start();
+                pipeline_->setInputNode(node.pipelineNodeId, inputNode);
             }
         }
 
@@ -483,8 +487,9 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
         if (ImGui::InputText("Key", key, sizeof(key))) {
             node.networkTableKey = key;
             if (!node.networkTableName.empty() && !node.networkTableKey.empty()) {
-                node.inputNode = std::make_unique<filter::NetworkTableInput>(node.networkTableName, node.networkTableKey);
-                node.inputNode->start();
+                auto inputNode = std::make_shared<filter::NetworkTableInput>(node.networkTableName, node.networkTableKey);
+                inputNode->start();
+                pipeline_->setInputNode(node.pipelineNodeId, inputNode);
             }
         }
 
@@ -495,9 +500,8 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
         // Connection type selection
         static int connectionType = 0;
         if (ImGui::RadioButton("USB", &connectionType, 0)) {
-            if (node.inputNode) {
-                auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(node.inputNode.get());
-                if (ntInput) {
+            if (auto inputNode = pipeline_->getInputNode(node.pipelineNodeId)) {
+                if (auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(inputNode.get())) {
                     ntInput->setUseUSB(true);
                     ntInput->stop();
                     ntInput->start();
@@ -506,9 +510,8 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
         }
         ImGui::SameLine();
         if (ImGui::RadioButton("IP Address", &connectionType, 1)) {
-            if (node.inputNode) {
-                auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(node.inputNode.get());
-                if (ntInput) {
+            if (auto inputNode = pipeline_->getInputNode(node.pipelineNodeId)) {
+                if (auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(inputNode.get())) {
                     ntInput->setUseUSB(false);
                     ntInput->stop();
                     ntInput->start();
@@ -525,9 +528,8 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
             
             if (ImGui::CollapsingHeader("Team Number")) {
                 if (ImGui::InputInt("Team Number", &teamNumber)) {
-                    if (node.inputNode) {
-                        auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(node.inputNode.get());
-                        if (ntInput) {
+                    if (auto inputNode = pipeline_->getInputNode(node.pipelineNodeId)) {
+                        if (auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(inputNode.get())) {
                             ntInput->setTeamNumber(teamNumber);
                             ntInput->stop();
                             ntInput->start();
@@ -543,9 +545,8 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
                 }
                 if (ImGui::InputText("IP Address", ipAddress, sizeof(ipAddress))) {
                     node.networkTableIP = ipAddress;
-                    if (node.inputNode) {
-                        auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(node.inputNode.get());
-                        if (ntInput) {
+                    if (auto inputNode = pipeline_->getInputNode(node.pipelineNodeId)) {
+                        if (auto* ntInput = dynamic_cast<filter::NetworkTableInput*>(inputNode.get())) {
                             ntInput->setIPAddress(node.networkTableIP);
                             ntInput->stop();
                             ntInput->start();
@@ -557,8 +558,8 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
     }
 
     // Show connection status
-    if (node.inputNode) {
-        ImGui::Text("Status: %s", node.inputNode->isConnected() ? "Connected" : "Disconnected");
+    if (auto inputNode = pipeline_->getInputNode(node.pipelineNodeId)) {
+        ImGui::Text("Status: %s", inputNode->isConnected() ? "Connected" : "Disconnected");
     }
 }
 
@@ -570,23 +571,13 @@ void FilterDesignUI::processFilters() {
     updatePipelineConnections();
 
     // Process data through the pipeline
+    std::vector<double> output = pipeline_->processData(std::vector<double>());
+    
+    // Update node outputs
     for (auto& [id, node] : nodes_) {
         if (node.nodeType == Node::NodeType::LogFileInput || 
             node.nodeType == Node::NodeType::NetworkTableInput) {
-            // Get data from input node
-            if (node.inputNode && node.inputNode->isConnected()) {
-                node.inputData = node.inputNode->getData();
-                if (!node.inputData.empty()) {
-                    node.outputData = pipeline_->processData(node.inputData);
-                    
-                    // Propagate output to connected nodes
-                    for (const auto& [linkId, link] : links_) {
-                        if (link.fromNode == id) {
-                            nodes_[link.toNode].inputData = node.outputData;
-                        }
-                    }
-                }
-            }
+            node.outputData = output;
         }
     }
 }

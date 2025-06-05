@@ -1,278 +1,277 @@
 #include "../../include/filter/InputNodes.hpp"
-#include <sstream>
-#include <iostream>
-#include <chrono>
 #include <algorithm>
-#include <filesystem>
+#include <wpi/SmallVector.h>
+#include <wpi/SpanExtras.h>
+#include <wpi/StringExtras.h>
+#include <wpi/fs.h>
 
 namespace filter {
 
-// LogFileInput implementation
 LogFileInput::LogFileInput(const std::string& filename, const std::string& columnName)
-    : filename_(filename)
-    , columnName_(columnName)
-    , running_(false)
-    , connected_(false)
-    , columnIndex_(-1) {
-    fileType_ = determineFileType();
-}
-
-LogFileInput::~LogFileInput() {
-    stop();
-}
-
-std::vector<double> LogFileInput::getData() {
-    std::vector<double> data;
-    std::lock_guard<std::mutex> lock(bufferMutex_);
-    
-    while (!dataBuffer_.empty()) {
-        data.push_back(dataBuffer_.front());
-        dataBuffer_.pop();
-    }
-    
-    return data;
+    : filename_(filename), columnName_(columnName), connected_(false) {
+    start();
 }
 
 bool LogFileInput::isConnected() const {
     return connected_;
 }
 
-void LogFileInput::start() {
-    if (running_) return;
-    
-    if (fileType_ == FileType::CSV) {
-        file_.open(filename_);
-        if (!file_.is_open()) {
-            std::cerr << "Failed to open log file: " << filename_ << std::endl;
-            return;
-        }
-    } else {
-        file_.open(filename_, std::ios::binary);
-        if (!file_.is_open()) {
-            std::cerr << "Failed to open WPILog file: " << filename_ << std::endl;
-            return;
-        }
+std::vector<double> LogFileInput::getData() const {
+    if (!connected_ || !reader_) {
+        return {};
     }
-    
+    return data_;
+}
+
+void LogFileInput::start() {
+    if (filename_.empty() || columnName_.empty()) {
+        connected_ = false;
+        return;
+    }
+
+    auto fileBuffer = wpi::MemoryBuffer::GetFile(filename_);
+    if (!fileBuffer) {
+        connected_ = false;
+        return;
+    }
+
+    wpi::DataLogReader reader{std::move(*fileBuffer)};
+    if (!reader.IsValid()) {
+        connected_ = false;
+        return;
+    }
+
+    reader_ = std::make_unique<wpi::DataLogReader>(std::move(reader));
     connected_ = true;
-    running_ = true;
-    readerThread_ = std::thread(&LogFileInput::readLoop, this);
+
+    // Load data for the specified column
+    data_.clear();
+    reader_->ForEachEntry([&](const wpi::DataLogReaderEntry& entry) {
+        if (entry.name == columnName_ && entry.type == "double") {
+            data_.push_back(entry.value);
+        }
+    });
 }
 
 void LogFileInput::stop() {
-    if (!running_) return;
-    
-    running_ = false;
-    if (readerThread_.joinable()) {
-        readerThread_.join();
-    }
-    
-    if (file_.is_open()) {
-        file_.close();
-    }
+    reader_.reset();
     connected_ = false;
+    data_.clear();
 }
 
-void LogFileInput::readLoop() {
-    if (fileType_ == FileType::CSV) {
-        std::string line;
-        bool foundHeader = false;
-        
-        // Read header to find column index
-        if (std::getline(file_, line)) {
-            std::istringstream iss(line);
-            std::string column;
-            int index = 0;
-            
-            while (std::getline(iss, column, ',')) {
-                if (column == columnName_) {
-                    columnIndex_ = index;
-                    foundHeader = true;
-                    break;
-                }
-                index++;
-            }
-        }
-        
-        if (!foundHeader) {
-            std::cerr << "Column not found in log file: " << columnName_ << std::endl;
-            connected_ = false;
-            return;
-        }
-        
-        // Read data lines
-        while (running_ && std::getline(file_, line)) {
-            double value;
-            if (parseLine(line, value)) {
-                std::lock_guard<std::mutex> lock(bufferMutex_);
-                dataBuffer_.push(value);
-            }
-            
-            // Small delay to prevent CPU hogging
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-    } else {
-        // Read magic number
-        uint32_t magic;
-        file_.read(reinterpret_cast<char*>(&magic), sizeof(magic));
-        if (magic != 0x574C4F47) {  // "WLOG"
-            std::cerr << "Invalid WPILog file format" << std::endl;
-            connected_ = false;
-            return;
-        }
-        
-        // Read version
-        uint32_t version;
-        file_.read(reinterpret_cast<char*>(&version), sizeof(version));
-        
-        // Read entry count
-        uint32_t entryCount;
-        file_.read(reinterpret_cast<char*>(&entryCount), sizeof(entryCount));
-        
-        // Read entries
-        while (running_ && !file_.eof()) {
-            uint32_t entryType, entrySize;
-            file_.read(reinterpret_cast<char*>(&entryType), sizeof(entryType));
-            file_.read(reinterpret_cast<char*>(&entrySize), sizeof(entrySize));
-            
-            if (file_.eof()) break;
-            
-            // Read entry data
-            std::vector<char> data(entrySize);
-            file_.read(data.data(), entrySize);
-            
-            // Process entry based on type
-            if (entryType == 0x01) {  // Double value
-                double value;
-                std::memcpy(&value, data.data(), sizeof(double));
-                std::lock_guard<std::mutex> lock(bufferMutex_);
-                dataBuffer_.push(value);
-            }
-            
-            // Small delay to prevent CPU hogging
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-    }
-}
-
-bool LogFileInput::parseLine(const std::string& line, double& value) {
-    std::istringstream iss(line);
-    std::string token;
-    int currentIndex = 0;
-    
-    while (std::getline(iss, token, ',')) {
-        if (currentIndex == columnIndex_) {
-            try {
-                value = std::stod(token);
-                return true;
-            } catch (const std::exception& e) {
-                return false;
-            }
-        }
-        currentIndex++;
-    }
-    
-    return false;
-}
-
-LogFileInput::FileType LogFileInput::determineFileType() const {
-    return std::filesystem::path(filename_).extension() == ".wpilog" ? FileType::WPILOG : FileType::CSV;
-}
-
-// NetworkTableInput implementation
 NetworkTableInput::NetworkTableInput(const std::string& tableName, const std::string& key)
-    : tableName_(tableName)
-    , key_(key)
-    , running_(false)
-    , connected_(false) {
-}
-
-NetworkTableInput::~NetworkTableInput() {
-    stop();
-}
-
-std::vector<double> NetworkTableInput::getData() {
-    std::vector<double> data;
-    std::lock_guard<std::mutex> lock(bufferMutex_);
-    
-    while (!dataBuffer_.empty()) {
-        data.push_back(dataBuffer_.front());
-        dataBuffer_.pop();
-    }
-    
-    return data;
+    : tableName_(tableName), key_(key), useUSB_(true), teamNumber_(0), connected_(false) {
+    start();
 }
 
 bool NetworkTableInput::isConnected() const {
     return connected_;
 }
 
-void NetworkTableInput::start() {
-    if (running_) return;
-    
-    // Initialize NetworkTable connection
-    try {
-        // Get server address based on connection type
-        std::string serverAddress = getServerAddress();
-        
-        // TODO: Initialize NetworkTable connection using the server address
-        // This is a placeholder for the actual NetworkTable implementation
-        // You'll need to integrate with your specific NetworkTable library
-        
-        connected_ = true;
-        running_ = true;
-        updateThread_ = std::thread(&NetworkTableInput::updateLoop, this);
-    } catch (const std::exception& e) {
-        std::cerr << "Failed to connect to NetworkTables server: " << e.what() << std::endl;
-        connected_ = false;
-    }
+std::vector<double> NetworkTableInput::getData() const {
+    return data_;
 }
 
-void NetworkTableInput::stop() {
-    if (!running_) return;
-    
-    running_ = false;
-    if (updateThread_.joinable()) {
-        updateThread_.join();
-    }
-    
+void NetworkTableInput::start() {
+    // TODO: Implement NetworkTable connection
     connected_ = false;
 }
 
-void NetworkTableInput::updateLoop() {
-    // TODO: Implement NetworkTable update loop
-    // This is a placeholder for the actual NetworkTable implementation
-    // You'll need to integrate with your specific NetworkTable library
-    
-    while (running_) {
-        // Simulate receiving data
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+void NetworkTableInput::stop() {
+    connected_ = false;
+    data_.clear();
+}
+
+void NetworkTableInput::setUseUSB(bool useUSB) {
+    useUSB_ = useUSB;
+}
+
+void NetworkTableInput::setTeamNumber(int teamNumber) {
+    teamNumber_ = teamNumber;
+}
+
+void NetworkTableInput::setIPAddress(const std::string& ipAddress) {
+    ipAddress_ = ipAddress;
+}
+
+LogLoader::LogLoader() = default;
+
+void LogLoader::Display() {
+    if (ImGui::Button("Open data log file...")) {
+        opener_ = std::make_unique<pfd::open_file>(
+            "Select Data Log", "",
+            std::vector<std::string>{"DataLog Files", "*.wpilog"});
+    }
+
+    // Handle opening the file
+    if (opener_ && opener_->ready(0)) {
+        if (!opener_->result().empty()) {
+            filename_ = opener_->result()[0];
+
+            auto fileBuffer = wpi::MemoryBuffer::GetFile(filename_);
+            if (!fileBuffer) {
+                ImGui::OpenPopup("Error");
+                error_ = fmt::format("Could not open file: {}",
+                                  fileBuffer.error().message());
+                return;
+            }
+
+            wpi::DataLogReader reader{std::move(*fileBuffer)};
+            if (!reader.IsValid()) {
+                ImGui::OpenPopup("Error");
+                error_ = "Not a valid datalog file";
+                return;
+            }
+            reader_ = std::make_unique<wpi::DataLogReader>(std::move(reader));
+            entryTree_.clear();
+        }
+        opener_.reset();
+    }
+
+    // Handle errors
+    ImGui::SetNextWindowSize(ImVec2(480.f, 0.0f));
+    if (ImGui::BeginPopupModal("Error")) {
+        ImGui::PushTextWrapPos(0.0f);
+        ImGui::TextUnformatted(error_.c_str());
+        ImGui::PopTextWrapPos();
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    if (!reader_) {
+        return;
+    }
+
+    // Summary info
+    ImGui::TextUnformatted(fs::path{filename_}.stem().string().c_str());
+    ImGui::Text("%u records, %u entries", reader_->GetNumRecords(),
+                reader_->GetNumEntries());
+
+    bool refilter = ImGui::InputText("Filter", &filter_);
+
+    // Display tree of entries
+    if (entryTree_.empty() || refilter) {
+        RebuildEntryTree();
+    }
+
+    ImGui::BeginTable(
+        "Entries", 2,
+        ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp);
+    ImGui::TableSetupColumn("Name");
+    ImGui::TableSetupColumn("Type");
+    ImGui::TableHeadersRow();
+    DisplayEntryTree(entryTree_);
+    ImGui::EndTable();
+}
+
+void LogLoader::RebuildEntryTree() {
+    entryTree_.clear();
+    wpi::SmallVector<std::string_view, 16> parts;
+    reader_->ForEachEntry([&](const wpi::DataLogReaderEntry& entry) {
+        // only show double/float/string entries
+        if (entry.type != "double" && entry.type != "float" &&
+            entry.type != "string") {
+            return;
+        }
+
+        // filter on name
+        if (!filter_.empty() && !wpi::contains_lower(entry.name, filter_)) {
+            return;
+        }
+
+        parts.clear();
+        // split on first : if one is present
+        auto [prefix, mainpart] = wpi::split(entry.name, ':');
+        if (mainpart.empty() || wpi::contains(prefix, '/')) {
+            mainpart = entry.name;
+        } else {
+            parts.emplace_back(prefix);
+        }
+        wpi::split(mainpart, parts, '/', -1, false);
+
+        // ignore a raw "/" key
+        if (parts.empty()) {
+            return;
+        }
+
+        // get to leaf
+        auto nodes = &entryTree_;
+        for (auto part : wpi::drop_back(std::span{parts.begin(), parts.end()})) {
+            auto it =
+                std::find_if(nodes->begin(), nodes->end(),
+                           [&](const auto& node) { return node.name == part; });
+            if (it == nodes->end()) {
+                nodes->emplace_back(part);
+                nodes->back().path.assign(
+                    entry.name.data(), part.data() + part.size() - entry.name.data());
+                it = nodes->end() - 1;
+            }
+            nodes = &it->children;
+        }
+
+        auto it = std::find_if(nodes->begin(), nodes->end(), [&](const auto& node) {
+            return node.name == parts.back();
+        });
+        if (it == nodes->end()) {
+            nodes->emplace_back(parts.back());
+            it = nodes->end() - 1;
+        }
+        it->entry = &entry;
+    });
+}
+
+void LogLoader::EmitEntry(const std::string& name,
+                         const wpi::DataLogReaderEntry& entry) {
+    ImGui::TableNextColumn();
+    ImGui::Selectable(name.c_str());
+    if (ImGui::BeginDragDropSource()) {
+        auto entryPtr = &entry;
+        ImGui::SetDragDropPayload(
+            entry.type == "string" ? "DataLogEntryString" : "DataLogEntry",
+            &entryPtr,
+            sizeof(entryPtr));
+        ImGui::TextUnformatted(entry.name.data(),
+                             entry.name.data() + entry.name.size());
+        ImGui::EndDragDropSource();
+    }
+    ImGui::TableNextColumn();
+    ImGui::TextUnformatted(entry.type.data(),
+                         entry.type.data() + entry.type.size());
+}
+
+void LogLoader::DisplayEntryTree(const std::vector<EntryTreeNode>& tree) {
+    for (auto&& node : tree) {
+        if (node.entry) {
+            EmitEntry(node.name, *node.entry);
+        }
+
+        if (!node.children.empty()) {
+            ImGui::TableNextColumn();
+            bool open = ImGui::TreeNodeEx(node.name.c_str(),
+                                        ImGuiTreeNodeFlags_SpanFullWidth);
+            ImGui::TableNextColumn();
+            if (open) {
+                DisplayEntryTree(node.children);
+                ImGui::TreePop();
+            }
+        }
     }
 }
 
-void NetworkTableInput::onValueChanged(double value) {
-    std::lock_guard<std::mutex> lock(bufferMutex_);
-    dataBuffer_.push(value);
-}
-
-std::string NetworkTableInput::getServerAddress() const {
-    if (useUSB_) {
-        // For USB connection, use localhost
-        return "localhost";
-    } else if (!ipAddress_.empty()) {
-        // Use custom IP address if provided
-        return ipAddress_;
-    } else if (teamNumber_ > 0) {
-        // Use team number to construct IP address (10.TE.AM.2)
-        int team = teamNumber_;
-        int hundreds = team / 100;
-        int tens = (team % 100) / 10;
-        int ones = team % 10;
-        return "10." + std::to_string(hundreds) + "." + std::to_string(tens) + std::to_string(ones) + ".2";
+std::vector<double> LogLoader::GetData(const std::string& entryName) const {
+    if (!reader_) {
+        return {};
     }
-    
-    // Default to localhost if no valid connection settings
-    return "localhost";
+
+    std::vector<double> data;
+    reader_->ForEachEntry([&](const wpi::DataLogReaderEntry& entry) {
+        if (entry.name == entryName && entry.type == "double") {
+            data.push_back(entry.value);
+        }
+    });
+    return data;
 }
 
-} // namespace filter 
+} // namespace filter

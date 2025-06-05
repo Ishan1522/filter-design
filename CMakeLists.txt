@@ -13,6 +13,8 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
+find_package(wpilib CONFIG REQUIRED)
+find_package(portable-file-dialogs CONFIG REQUIRED)
 
 # Add imgui as a subdirectory
 add_subdirectory(imgui)
@@ -72,6 +74,7 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/include/filter
         ${OPENGL_INCLUDE_DIR}
         ${vcpkg_installed_DIR}/x64-windows/include
+        ${WPILIB_INCLUDE_DIRS}
 )
 
 # Add include directories for imgui
@@ -105,6 +108,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${OPENGL_LIBRARIES}
     glfw
     glad::glad
+    wpilib::wpilib
+    portable-file-dialogs::portable-file-dialogs
 )
 
 target_link_libraries(imgui

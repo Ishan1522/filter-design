@@ -447,25 +447,37 @@ void FilterDesignUI::renderInputParameters(int nodeId) {
             }
         }
 
-        char column[256] = {0};
-        strncpy(column, node.logColumnName.c_str(), sizeof(column) - 1);
-        if (ImGui::InputText("Column Name", column, sizeof(column))) {
-            node.logColumnName = column;
-            if (!node.logFilename.empty() && !node.logColumnName.empty()) {
-                auto inputNode = std::make_shared<filter::LogFileInput>(node.logFilename, node.logColumnName);
-                inputNode->start();
-                pipeline_->setInputNode(node.pipelineNodeId, inputNode);
-            }
-        }
-
         if (ImGui::Button("Browse...")) {
             std::string selectedPath;
             if (openFileDialog(selectedPath)) {
                 node.logFilename = selectedPath;
-                if (!node.logFilename.empty() && !node.logColumnName.empty()) {
+                if (!node.logFilename.empty()) {
                     auto inputNode = std::make_shared<filter::LogFileInput>(node.logFilename, node.logColumnName);
                     inputNode->start();
                     pipeline_->setInputNode(node.pipelineNodeId, inputNode);
+                }
+            }
+        }
+
+        // Show available fields if file is loaded
+        if (auto inputNode = pipeline_->getInputNode(node.pipelineNodeId)) {
+            if (auto* logInput = dynamic_cast<filter::LogFileInput*>(inputNode.get())) {
+                const auto& fields = logInput->getAvailableFields();
+                if (!fields.empty()) {
+                    ImGui::Separator();
+                    ImGui::Text("Available Fields");
+                    
+                    // Create a combo box for field selection
+                    if (ImGui::BeginCombo("Select Field", node.logColumnName.c_str())) {
+                        for (const auto& field : fields) {
+                            bool isSelected = (field == node.logColumnName);
+                            if (ImGui::Selectable(field.c_str(), isSelected)) {
+                                node.logColumnName = field;
+                                logInput->setColumnName(field);
+                            }
+                        }
+                        ImGui::EndCombo();
+                    }
                 }
             }
         }

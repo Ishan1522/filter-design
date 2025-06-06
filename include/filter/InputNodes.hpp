@@ -10,9 +10,7 @@
 #include <queue>
 #include <functional>
 #include <filesystem>
-#include <portable-file-dialogs.h>
-#include <wpi/MemoryBuffer.h>
-#include <wpi/DataLogReader.h>
+#include "LogFileParser.hpp"
 #include <imgui.h>
 
 namespace filter {
@@ -28,11 +26,6 @@ public:
 
 class LogFileInput : public InputNode {
 public:
-    enum class FileType {
-        CSV,
-        WPILOG
-    };
-
     LogFileInput(const std::string& filename, const std::string& columnName);
     ~LogFileInput() override = default;
 
@@ -41,23 +34,15 @@ public:
     void start() override;
     void stop() override;
 
-private:
-    void readLoop();
-    bool parseLine(const std::string& line, double& value);
-    FileType determineFileType() const;
+    const std::vector<std::string>& getAvailableFields() const;
+    void setColumnName(const std::string& columnName);
 
+private:
     std::string filename_;
     std::string columnName_;
-    std::ifstream file_;
-    std::queue<double> dataBuffer_;
-    std::mutex bufferMutex_;
-    std::thread readerThread_;
-    std::atomic<bool> running_;
-    bool connected_;
-    FileType fileType_;
-    int columnIndex_;
-    std::unique_ptr<wpi::DataLogReader> reader_;
+    std::unique_ptr<LogFileParser> parser_;
     std::vector<double> data_;
+    bool connected_;
 };
 
 class NetworkTableInput : public InputNode {
@@ -93,35 +78,6 @@ private:
     bool useUSB_ = true;
     std::string ipAddress_;
     std::vector<double> data_;
-};
-
-class LogLoader {
-public:
-    LogLoader();
-    ~LogLoader() = default;
-
-    void Display();
-    bool IsFileLoaded() const { return reader_ != nullptr; }
-    std::vector<double> GetData(const std::string& entryName) const;
-
-private:
-    void RebuildEntryTree();
-    void DisplayEntryTree(const std::vector<EntryTreeNode>& tree);
-    static void EmitEntry(const std::string& name, const wpi::DataLogReaderEntry& entry);
-
-    struct EntryTreeNode {
-        std::string name;
-        std::string path;
-        const wpi::DataLogReaderEntry* entry = nullptr;
-        std::vector<EntryTreeNode> children;
-    };
-
-    std::unique_ptr<pfd::open_file> opener_;
-    std::string filename_;
-    std::string error_;
-    std::unique_ptr<wpi::DataLogReader> reader_;
-    std::vector<EntryTreeNode> entryTree_;
-    std::string filter_;
 };
 
 } // namespace filter 

@@ -13,8 +13,14 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
-find_package(wpilib CONFIG REQUIRED)
-find_package(portable-file-dialogs CONFIG REQUIRED)
+find_package(ntcore CONFIG REQUIRED)
+find_package(wpimath CONFIG REQUIRED)
+find_package(wpinet CONFIG REQUIRED)
+find_package(wpiutil CONFIG REQUIRED)
+find_path(PORTABLE_FILE_DIALOGS_INCLUDE_DIRS "portable-file-dialogs.h")
+if(NOT PORTABLE_FILE_DIALOGS_INCLUDE_DIRS)
+    message(FATAL_ERROR "portable-file-dialogs.h not found")
+endif()
 
 # Add imgui as a subdirectory
 add_subdirectory(imgui)
@@ -48,6 +54,7 @@ set(SOURCES
     source/filter/LowPassFilter.cpp
     source/pipeline/FilterPipeline.cpp
     source/filter/InputNodes.cpp
+    source/filter/LogFileParser.cpp
 )
 
 # Add header files
@@ -75,6 +82,7 @@ target_include_directories(${PROJECT_NAME}
         ${OPENGL_INCLUDE_DIR}
         ${vcpkg_installed_DIR}/x64-windows/include
         ${WPILIB_INCLUDE_DIRS}
+        ${PORTABLE_FILE_DIALOGS_INCLUDE_DIRS}
 )
 
 # Add include directories for imgui
@@ -108,8 +116,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${OPENGL_LIBRARIES}
     glfw
     glad::glad
-    wpilib::wpilib
-    portable-file-dialogs::portable-file-dialogs
+    ntcore
+    wpimath
+    wpinet
+    wpiutil
 )
 
 target_link_libraries(imgui

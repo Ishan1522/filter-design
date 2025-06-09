@@ -13,6 +13,7 @@
 #include "filter/Filter.hpp"
 #include "filter/ButterworthFilter.hpp"
 #include <stdexcept>
+#include "portable-file-dialogs.h"
 
 #define M_PI 3.14159265358979323846
 
@@ -114,13 +115,40 @@ void FilterDesignUI::renderMenu() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New")) {
-                // TODO: Implement new pipeline
+                // Clear all nodes and links
+                nodes_.clear();
+                links_.clear();
+                nextNodeId_ = 1;
+                nextLinkId_ = 1;
+                pipeline_ = std::make_unique<pipeline::FilterPipeline>();
             }
             if (ImGui::MenuItem("Open")) {
-                // TODO: Implement open pipeline
+                std::string filePath;
+                if (openFileDialog(filePath)) {
+                    // TODO: Load pipeline from file
+                    std::ifstream file(filePath);
+                    if (file.is_open()) {
+                        // Clear existing nodes and links
+                        nodes_.clear();
+                        links_.clear();
+                        nextNodeId_ = 1;
+                        nextLinkId_ = 1;
+                        pipeline_ = std::make_unique<pipeline::FilterPipeline>();
+                        
+                        // TODO: Parse file and recreate nodes/links
+                        file.close();
+                    }
+                }
             }
             if (ImGui::MenuItem("Save")) {
-                // TODO: Implement save pipeline
+                std::string filePath;
+                if (openFileDialog(filePath)) {
+                    std::ofstream file(filePath);
+                    if (file.is_open()) {
+                        // TODO: Save pipeline to file
+                        file.close();
+                    }
+                }
             }
             ImGui::EndMenu();
         }
@@ -398,35 +426,16 @@ void FilterDesignUI::renderCodeExport(int nodeId) {
 }
 
 bool FilterDesignUI::openFileDialog(std::string& outPath) {
-    static char filename[256] = "";
-    static bool showDialog = true;
+    auto dialog = pfd::open_file("Select a file", ".",
+        { "All Files", "*" },
+        pfd::opt::none);
     
-    if (showDialog) {
-        ImGui::OpenPopup("Select File");
-        showDialog = false;
+    if (dialog.result().empty()) {
+        return false;
     }
     
-    if (ImGui::BeginPopupModal("Select File", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::InputText("Filename", filename, sizeof(filename));
-        
-        if (ImGui::Button("OK", ImVec2(120, 0))) {
-            outPath = filename;
-            ImGui::CloseCurrentPopup();
-            showDialog = true;
-            return true;
-        }
-        
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
-            ImGui::CloseCurrentPopup();
-            showDialog = true;
-            return false;
-        }
-        
-        ImGui::EndPopup();
-    }
-    
-    return false;
+    outPath = dialog.result()[0];
+    return true;
 }
 
 void FilterDesignUI::renderInputParameters(int nodeId) {
